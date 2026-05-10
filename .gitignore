@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# data dir
+
+/output/*
+/backend/tests/pipeline_test/data/fallback_latlon/*
+/backend/tests/pipeline_test/data/latlon_index/*
+/backend/tests/diagrams/*
+
