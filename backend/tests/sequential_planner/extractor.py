@@ -1,3 +1,11 @@
+# To do: add more detailed reasoning in the output (Eg. why certain categories were chosen, how preferences were distributed, why the amount of activity slots, etc.) to provide better insights for the candidate generator and also for debugging/improvement of the extraction logic, etc.
+# To do: add more detailed tags for each slot to provide better semantic hints for the candidate generator (Eg. if a slot is a "museum" category but has tags like "art", "family-friendly", "offbeat", etc. it can help the candidate generator to suggest more relevant activities and also provide more variety, etc.)
+# To do: benchmark various models for the extraction task to find the best balance of cost, latency, and output quality (Eg. we can try a smaller model with more prompt engineering for cost savings, or a larger model for better understanding of complex inputs, etc.)
+# To do: save metrics and reasoning in a more structured way (Eg. in a database or a more detailed log file) to enable better analysis and improvement of the extraction logic over time, etc.
+
+# To do: optimize prompt and reduce token usage by dynamically building itinerary structure
+
+
 from google import genai
 from schema import UserInput, StructuredUserInput
 from dotenv import load_dotenv

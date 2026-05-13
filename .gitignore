@@ -221,7 +221,7 @@ __marimo__/
 # data dir
 
 /output/*
-/backend/tests/pipeline_test/data/fallback_latlon/*
-/backend/tests/pipeline_test/data/latlon_index/*
+/backend/tests/sequential_planner/data/fallback_latlon/*
+/backend/tests/sequential_planner/data/latlon_index/*
 /backend/tests/diagrams/*
 

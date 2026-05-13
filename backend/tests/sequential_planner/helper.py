@@ -2,6 +2,8 @@ import os
 import time
 from datetime import datetime
 from functools import wraps
+import inspect
+
 
 
 # Gemini pricing (as of 2026-07)
@@ -42,13 +44,39 @@ def calculate_cost(input_tokens: int, output_tokens: int):
     }
 
 
+
 def measure_latency(func):
-    """
-    Decorator for measuring execution latency.
-    """
+
+    # --------------------------------------------------
+    # ASYNC FUNCTION
+    # --------------------------------------------------
+
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+
+            start = time.perf_counter()
+
+            result = await func(*args, **kwargs)
+
+            end = time.perf_counter()
+
+            print(
+                f"[LATENCY] {func.__name__}: "
+                f"{end - start:.2f} sec"
+            )
+
+            return result
+
+        return async_wrapper
+
+    # --------------------------------------------------
+    # SYNC FUNCTION
+    # --------------------------------------------------
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def sync_wrapper(*args, **kwargs):
 
         start = time.perf_counter()
 
@@ -56,10 +84,11 @@ def measure_latency(func):
 
         end = time.perf_counter()
 
-        latency = round(end - start, 4)
-
-        print(f"[LATENCY] {func.__name__}: {latency} sec")
+        print(
+            f"[LATENCY] {func.__name__}: "
+            f"{end - start:.2f} sec"
+        )
 
         return result
 
-    return wrapper
+    return sync_wrapper
