@@ -225,3 +225,13 @@ __marimo__/
 /backend/tests/sequential_planner/data/latlon_index/*
 /backend/tests/diagrams/*
 
+/backend/tests/hierarchial_planner/data/*
+/backend/tests/hierarchial_planner/data/fallback_latlon/*
+/backend/tests/hierarchial_planner/data/latlon_index/*
+/backend/tests/hierarchial_planner/results/*
+/backend/tests/hierarchial_planner/model/*
+
+/backend/tests/assets/diagrams/*
+
+
+/backend/tests/hierarchial_planner/destination/*

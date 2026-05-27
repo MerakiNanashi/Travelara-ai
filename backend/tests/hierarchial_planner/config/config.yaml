@@ -1,0 +1,167 @@
+project:
+  name: Travelara-AI
+  version: "0.1.0"
+  environment: development
+  debug: true
+
+
+llm:
+  active_model: gemini-2.5-flash-lite
+  fallback_model: gpt-3.5-turbo
+  temperature: 0.1
+  top_p: 0.2
+  other_models:
+    - model: gpt-4
+      temperature: 0.5
+    - model: gpt-3.5-turbo
+      temperature: 0.7
+
+planner:
+  max_days: 14
+  default_days: 3
+  max_pois_per_category: 100
+  max_candidate_pois: 300
+  max_anchor_candidates: 25
+  min_anchor_separation_km: 1.5
+  default_anchor_radius_km: 4.0
+  max_travel_time_per_day: 180
+  min_unique_categories: 2
+  fatigue_threshold: 0.75
+  allow_repeated_pois: false
+  fallback_to_any_category: true
+  enable_conflict_resolution: true
+  enable_iterative_refinement: true
+  enable_global_optimization: true
+  scoring_strategy: weighted_hybrid
+  routing_strategy: greedy_local_global
+
+
+weights:
+  distance_score: 1.4
+  preference_score: 1.3
+  budget_score: 1.0
+  popularity_score: 0.7
+  diversity_score: 0.8
+  fatigue_penalty: 1.2
+  routing_score: 1.0
+  temporal_score: 0.6
+  weather_score: 0.3
+  safety_score: 0.5
+  novelty_score: 0.4
+  isolation_penalty: 0.8
+  semantic_importance: 2.0
+  geographic_connectivity: 1.5
+
+
+poi:
+  default_slot_durations:
+    restaurant: 75
+    cafe: 45
+    nightlife: 120
+    shopping: 90
+    museum: 120
+    park: 90
+    landmark: 75
+    tourist_attraction: 100
+    cultural: 105
+    entertainment: 120
+    adventure: 150
+    beach: 120
+
+  anchor_categories:
+    - tourist_attraction
+    - museum
+    - landmark
+    - cultural
+    - park
+    - adventure
+    - entertainment
+    - beach
+
+  meal_categories:
+    - restaurant
+    - cafe
+
+
+retrieval:
+  provider: serpapi
+  cache_enabled: true
+  cache_ttl_hours: 48
+  retry_attempts: 3
+  request_timeout_seconds: 30
+  parallel_requests: 5
+  geospatial_indexing: true
+  deduplicate_pois: true
+  normalize_categories: true
+
+
+scoring:
+  normalize_scores: true
+  min_score_threshold: 0.25
+  confidence_threshold: 0.6
+  popularity_log_base: 10
+  distance_decay_factor: 1.0
+  enable_penalties: true
+  enable_bonus_rules: true
+
+
+routing:
+  average_city_speed_kmph: 18
+  walking_speed_kmph: 4.5
+  traffic_multiplier_peak: 1.5
+  traffic_multiplier_normal: 1.0
+  max_single_leg_distance_km: 15
+  optimize_round_trip: true
+
+
+budget:
+  enable_budget_tracking: true
+  default_daily_budget: 100
+  currency: USD
+
+  price_level_weights:
+    "1": 0.25
+    "2": 0.5
+    "3": 0.75
+    "4": 1.0
+
+
+logging:
+  level: INFO
+  save_logs: true
+  save_score_breakdowns: true
+  save_rejected_pois: true
+  save_intermediate_states: true
+  log_dir: output/logs
+
+
+output:
+  save_json: true
+  save_debug_json: true
+  pretty_print: true
+  ensure_ascii: false
+  output_dir: output
+
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  cors_enabled: true
+  rate_limit_per_minute: 60
+
+
+ml:
+  enabled: false
+  ranking_model: null
+  embedding_model: null
+  reranker_model: null
+  use_semantic_similarity: false
+  use_gnn_routing: false
+
+
+experimental:
+  enable_weather_awareness: false
+  enable_live_events: false
+  enable_crowd_density_prediction: false
+  enable_dynamic_replanning: false
+  enable_llm_reviewer: false
