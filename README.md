@@ -144,15 +144,14 @@ Itinerary + Score
 ```
 travelara/
 ├── app/
-│   ├── main.py                 # FastAPI app + CORS
-│   ├── core/config.py          # Settings + env vars
-│   ├── models/schemas.py       # All Pydantic models
-│   ├── routers/plan.py         # API endpoints
-│   └── services/
-│       ├── extractor.py        # Gemini NL → StructuredIntent
-│       ├── retrieval.py        # Geoapify + Foursquare POI fetch
-│       ├── graph.py            # KNN graph, DBSCAN, utility scoring
-│       └── planner.py          # Anchors, beam search, refinement
+│   ├── config.py           # Settings + env vars
+│   ├── schemas.py          # All Pydantic models
+│   ├── plan.py             # API endpoints
+│   ├── extractor.py        # Gemini NL → StructuredIntent
+│   ├── retrieval.py        # Geoapify + Foursquare POI fetch
+│   ├── graph.py            # KNN graph, DBSCAN, utility scoring
+│   └── planner.py          # Anchors, beam search, refinement
+├── main.py                 # FastAPI app + CORS
 ├── requirements.txt
 ├── .env.example
 └── README.md
