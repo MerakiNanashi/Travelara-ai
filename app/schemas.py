@@ -41,6 +41,7 @@ class StructuredIntent(BaseModel):
     destination: str
     days: int
     stay_location: str
+    is_international: bool
     budget: str  # low / medium / high
     preferences: Preferences
     constraints: Constraints

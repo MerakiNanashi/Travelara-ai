@@ -6,7 +6,7 @@ from app.schemas import (
     PlanningRequest, PlanResponse, IntentResponse, POIListResponse
 )
 from app.extractor import extract_intent
-from app.retrieval import retrieve_candidates
+from app.providers.provider import run_retrieval
 from app.planner import build_itinerary
 
 router = APIRouter(prefix="/plan", tags=["Planning"])
@@ -30,7 +30,7 @@ async def plan_trip(request: PlanningRequest):
         )
 
     try:
-        pois, lat, lon = await retrieve_candidates(intent)
+        pois, lat, lon = await run_retrieval("GA", intent)
     except Exception as e:
         raise HTTPException(
             status_code=502,

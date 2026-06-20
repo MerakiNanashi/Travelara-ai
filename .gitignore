@@ -255,6 +255,6 @@ __marimo__/
 /backend/note.md
 
 
-/travelara-cd-v2/data/*
-/travelara-cd-v2/data/
-/travelara-cd-v2/
+/data/*
+/data/
+*/data/*

@@ -20,9 +20,10 @@ cp .env.example .env
 #   FOURSQUARE_API_KEY→ https://developer.foursquare.com/ (free tier available)
 
 # Edit latlon_path in config.py
-# Download cities500.zip from https://download.geonames.org/export/dump/
+# Download cities500.zip & IN.zip from https://download.geonames.org/export/dump/
 
 # latlon_path = r"/cities500.txt" # Enter the path for cities500.txt
+#in_latlon_path = r"/IN.txt" # Enter the path for IN.txt
 
 # 3. Run
 
