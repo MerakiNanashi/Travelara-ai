@@ -1,20 +1,13 @@
 
 from __future__ import annotations
+import json
 from app.schemas import POI
-from app.config import settings
+from app.config import settings, FS_cat
 from app.providers.provider_class import BaseProvider, make_poi_id
 
 # Foursquare category IDs → preference keys
-FOURSQUARE_CATEGORIES = {
-    "museums":   ["10027", "10000"],   # Museum, Arts & Entertainment
-    "food":      ["13000", "13032"],   # Food, Restaurant
-    "nightlife": ["10032", "13003"],   # Nightlife, Bar
-    "nature":    ["16000", "16032"],   # Outdoors, Park
-    "shopping":  ["17000", "17069"],   # Retail
-    "arts":      ["10024", "10004"],   # Theater, Concert
-    "history":   ["16010", "16011"],   # Historic Site, Monument
-    "wellness":  ["18000", "18021"],   # Spa, Gym
-}
+with open(FS_cat, 'r', encoding='utf-8') as f:
+    FOURSQUARE_CATEGORIES = json.load(f)
 
 
 class FoursquareProvider(BaseProvider):
@@ -22,6 +15,7 @@ class FoursquareProvider(BaseProvider):
     source = "FS"
     url = "https://places-api.foursquare.com/places/search"
     category_map = FOURSQUARE_CATEGORIES
+    limit = 49
 
     def build_request(self,
                       provider_categories: list[str],
@@ -53,7 +47,7 @@ class FoursquareProvider(BaseProvider):
 
             for place in payload.get("results", []):
 
-                name = place.get("name", "").strip()
+                name = str(place.get("name", "")).strip()
 
                 if not name:
                     continue

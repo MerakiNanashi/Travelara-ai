@@ -7,9 +7,13 @@ Current Providers:
 
 from __future__ import annotations
 import asyncio
+import datetime
 from abc import ABC, abstractmethod
 import httpx
 from app.schemas import POI, Preferences
+from pathlib import Path
+import os
+import json
 
 
 def make_poi_id(source, id):
@@ -39,6 +43,7 @@ class BaseProvider(ABC):
     source: str
     category_map: dict[str, list[str]]
     url: str
+    limit: int
 
     @abstractmethod
     def build_request(self,
@@ -60,15 +65,14 @@ class BaseProvider(ABC):
                              provider_categories: list[str],
                              lat: float,
                              lon: float,
-                             radius_m: int,
-                             limit: int):
+                             radius_m: int,):
 
         params, headers = self.build_request(
             provider_categories=provider_categories,
             lat=lat,
             lon=lon,
             radius_m=radius_m,
-            limit=limit,
+            limit=self.limit,
         )
 
         r = await client.get(
@@ -77,7 +81,9 @@ class BaseProvider(ABC):
             headers=headers,
         )
 
-        r.raise_for_status()
+        if r.status_code != 200:
+            print(r.text)
+            r.raise_for_status()
 
         return common_category, r.json()
 
@@ -87,7 +93,6 @@ class BaseProvider(ABC):
                     category_map: dict[str, list[str]],
                     timeout: float = 20.0,
                     radius_m: int = 8000,
-                    limit: int = 100,
                     debug: bool = False) -> dict[str, dict]:
 
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -100,7 +105,6 @@ class BaseProvider(ABC):
                     lat=lat,
                     lon=lon,
                     radius_m=radius_m,
-                    limit=limit,
                 )
                 for common_category, provider_categories in category_map.items()
             ]
@@ -125,6 +129,23 @@ class BaseProvider(ABC):
                 print(f"Processed: {common_category}")
 
         return result
+    
+    def _save(self,
+            raw_result: dict[str, dict],
+            run_id: str,
+            save_dir: Path,):
+        now = datetime.now()
+        os.makedirs(save_dir, exist_ok=True)
+        filename = save_dir / f"{self.source}_{run_id}_rawresult_{now:%Y%m%d_%H%M%S}.json"
+        
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(
+            raw_result,
+            f,
+            indent=2,
+            default=str,
+            ensure_ascii=False,
+        )
 
     async def retrieve(self,
                        lat: float,
@@ -145,5 +166,7 @@ class BaseProvider(ABC):
             radius_m=radius_m,
             debug=debug
         )
+
+        self._save(results, "1234", Path("RawResult")) # Should change to a more standard saving method/folder, also need to pass id through
 
         return self.normalize(results)

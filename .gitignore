@@ -258,3 +258,13 @@ __marimo__/
 /data/*
 /data/
 */data/*
+
+/app/old/*
+/app/old/
+
+/experiments/RawResult/*
+/experiments/RawResult/
+/experiments/runs/
+/experiments/runs/*
+
+/docs/*

@@ -18,13 +18,14 @@ def parse_geocode_file(filepath: str):
             try:
                 cleaned.append(
                     {
-                        "name": row[1].strip().lower(),
+                        "name": str(row[1]).strip().lower(),
                         "lat": float(row[4]),
                         "lon": float(row[5]),
                         "population": int(row[14]) if row[14] else 0,
                     }
                 )
             except Exception:
+                print("parse_geocode_file failed")
                 continue
 
     return cleaned
@@ -81,7 +82,7 @@ def _deduplicate(pois: list[POI],
 
     for poi in pois:
 
-        norm_name = poi.name.lower().strip()
+        norm_name = str(poi.name).lower().strip()
 
         if norm_name in seen_names:
             dropped[poi.category] = dropped.get(poi.category, 0) + 1
