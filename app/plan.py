@@ -93,7 +93,7 @@ async def retrieve_pois_endpoint(request: PlanningRequest):
         raise HTTPException(status_code=502, detail=f"Intent extraction failed: {e}")
 
     try:
-        pois, lat, lon = await retrieve_candidates(intent)
+        pois, lat, lon = await run_retrieval(intent)
         return POIListResponse(success=True, pois=pois, total=len(pois))
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
