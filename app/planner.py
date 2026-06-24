@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 from app.schemas import (
     POI, StructuredIntent, Itinerary, DayPlan, ItineraryStop, ItineraryScore
 )
-from app.graph import (
-    haversine_km, cluster_pois, group_by_cluster, score_all_pois, build_knn_graph
+from app.clustering.cluster import (
+    haversine_km, cluster_pois, group_by_cluster, score_all_pois
 )
 from app.config import settings
 

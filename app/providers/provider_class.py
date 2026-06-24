@@ -7,14 +7,13 @@ Current Providers:
 
 from __future__ import annotations
 import asyncio
-import datetime
+from datetime import datetime
 from abc import ABC, abstractmethod
 import httpx
 from app.schemas import POI, Preferences
 from pathlib import Path
 import os
 import json
-
 
 def make_poi_id(source, id):
     return f"{source}_{id}"
@@ -130,6 +129,7 @@ class BaseProvider(ABC):
 
         return result
     
+    # shift this to utils
     def _save(self,
             raw_result: dict[str, dict],
             run_id: str,
@@ -137,7 +137,6 @@ class BaseProvider(ABC):
         now = datetime.now()
         os.makedirs(save_dir, exist_ok=True)
         filename = save_dir / f"{self.source}_{run_id}_rawresult_{now:%Y%m%d_%H%M%S}.json"
-        
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(
             raw_result,

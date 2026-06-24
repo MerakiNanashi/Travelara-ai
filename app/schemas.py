@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Any
 
 
 # ─── Input / Planning Request ─────────────────────────────────────────────────
@@ -15,7 +15,6 @@ class PlanningRequest(BaseModel):
                 "query": "5-day Tokyo trip, interested in museums and food, moderate budget, staying near Shinjuku, avoid excessive walking"
             }
         }
-
 
 # ─── Structured Intent (Extractor output) ─────────────────────────────────────
 
@@ -57,17 +56,17 @@ class POI(BaseModel):
     lon: float
     category: str
     tags: list[str] = Field(default_factory=list)
-    popularity_score: float = 0.5
-    opening_hours: dict = Field(default_factory=dict)
-    avg_duration_minutes: int = 60
-    estimated_cost_usd: float = 0.0
-    rating: float = 3.0
+    popularity_score: float | None = None
+    opening_hours: dict | str | None = None
+    external_links: list[str] = Field(default_factory=list)
+    rating: float | None = None
+    reviews: int | None = None
     address: str = ""
+    pincode: str = ""
     source: str = "foursquare"
 
     # Scoring fields (populated during planning)
-    utility_score: float = 0.0
-    is_anchor: bool = False
+    utility_score: QualityScore
 
 
 # ─── Itinerary ────────────────────────────────────────────────────────────────
@@ -128,3 +127,16 @@ class POIListResponse(BaseModel):
     pois: list[POI] = Field(default_factory=list)
     total: int = 0
     error: Optional[str] = None
+
+
+class QualityScore(BaseModel):
+    id: str
+    name_score: float = 1.0
+    source_score: float = 0.0
+    tag_score: float = 0.0
+    external_link_score: float = 0.0
+    wiki_score: float = 0.0
+    semantic_score: float = 0.0
+    overall_score: float = 0.0
+    raw_score: float = 0.0
+    reasons: list[str] = Field(default_factory=list)

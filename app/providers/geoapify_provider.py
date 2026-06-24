@@ -1,68 +1,13 @@
 
 from __future__ import annotations
+import json
 from app.schemas import POI
-from app.config import settings
+from app.config import settings, GA_cat
 from app.providers.provider_class import BaseProvider, make_poi_id
 
 # Geoapify categories → preference keys
-GEOAPIFY_CATEGORIES = {
-    "museums": [
-        "entertainment.museum",
-        "entertainment.culture",
-        "entertainment.culture.gallery",
-    ],
-
-    "food": [
-        "catering",
-        "catering.restaurant",
-        "catering.cafe",
-        "catering.fast_food",
-    ],
-
-    "nightlife": [
-        "catering.bar",
-        "catering.pub",
-        "catering",
-    ],
-
-    "nature": [
-        "leisure.park",
-        "leisure.park.garden",
-        "natural",
-        "natural.forest",
-        "natural.water",
-    ],
-
-    "shopping": [
-        "commercial",
-        "commercial.shopping_mall",
-        "commercial.marketplace",
-        "commercial.food_and_drink",
-    ],
-
-    "arts": [
-        "entertainment.culture",
-        "entertainment.culture.theatre",
-        "entertainment.culture.gallery",
-        "entertainment.culture.arts_centre",
-    ],
-
-    "history": [
-        "tourism",
-        "tourism.attraction",
-        "tourism.sights",
-        "tourism.sights.castle",
-        "tourism.sights.memorial",
-        "tourism.sights.monastery",
-        "heritage",
-    ],
-
-    "wellness": [
-        "leisure.spa",
-        "sport.fitness",
-        "sport.fitness.gym",
-    ],
-}
+with open(GA_cat, 'r', encoding='utf-8') as f:
+    GEOAPIFY_CATEGORIES = json.load(f)
 
 
 class GeoapifyProvider(BaseProvider):
@@ -116,9 +61,14 @@ class GeoapifyProvider(BaseProvider):
                                     lon=coords[0],
                                     category=common_category,
                                     tags=props.get("categories", [])[:5],
-                                    popularity_score=min(props.get("datasource", {}).get("raw", {}).get("popularity", 0.5), 1.0 ),
-                                    rating=props.get("datasource", {}).get("raw", {}).get("rating", 3.5),
+                                    popularity_score=min(props.get("datasource", {}).get("raw", {}).get("popularity", 0.5), 1.0 ), # same as rating
+                                    opening_hours=props.get("opening_hours", {}),
+                                    external_links = [v for v in [
+                                                props.get("website"),
+                                                props.get("datasource").get("source_ref"), ] if v and str(v).strip()],
+                                    rating=props.get("datasource", {}).get("raw", {}).get("rating", 3.5), # always default since doesn't exist most often
                                     address=props.get("formatted", ""),
+                                    pincode=props.get("postcode", {}),
                                     source="geoapify",
                                 )
                             )

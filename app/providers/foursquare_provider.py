@@ -52,21 +52,23 @@ class FoursquareProvider(BaseProvider):
                 if not name:
                     continue
 
-                geo = place.get("geocodes", {}).get("main", {})
-
                 pois.append(
                         POI(
-                            id=make_poi_id("FS", place.get("fsq_id", name)),
+                            id=make_poi_id("FS", place.get("fsq_place_id", name)),
                             name=name,
-                            lat=geo.get("latitude", 0),
-                            lon=geo.get("longitude", 0),
+                            lat=place.get("latitude", 0),
+                            lon=place.get("longitude", 0),
                             category=common_category,
                             tags=[c.get("name", "") for c in place.get("categories", [])[:5]],
                             popularity_score=min(place.get("popularity", 0.5), 1.0),
+                            external_links= [v for v in [
+                                *(place.get("social_media") or {}).values(),
+                                place.get("website"),] if v and str(v).strip()],
                             opening_hours={"display": place.get("hours", {}).get("display", "")} if place.get("hours") else {},
                             rating=place.get("rating", 7.0) / 10 * 5,
                             address=place.get("location", {}).get("formatted_address", ""),
-                            source="foursquare",
+                            pincode=place.get("location", {}).get("postcode", ""),
+                            source="foursquare"
                         )
                 )
 
