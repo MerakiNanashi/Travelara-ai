@@ -1,9 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-latlon_path = r'C:\Users\kuchbhe\Desktop\workspace_1\travelara-cd-v2\data\latlon\cities500.txt' # fill in the path for cities500.txt data
-in_latlon_path = r'C:\Users\kuchbhe\Desktop\workspace_1\travelara-cd-v2\data\latlon\IN.txt' # fill in the path for IN.txt
-FS_cat = r'C:\Users\kuchbhe\Desktop\workspace_1\travelara-cd-v2\data\providers_taxamony\foursquare_categories.json'
-GA_cat = r'C:\Users\kuchbhe\Desktop\workspace_1\travelara-cd-v2\data\providers_taxamony\geoapify_categories.json'
+latlon_path = r'' # fill in the path for cities500.txt data
+in_latlon_path = r'' # fill in the path for IN.txt
+FS_cat = r'\data\providers_taxamony\foursquare_categories.json'
+GA_cat = r'\data\providers_taxamony\geoapify_categories.json'
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""

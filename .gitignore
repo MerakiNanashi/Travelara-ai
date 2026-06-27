@@ -255,10 +255,11 @@ __marimo__/
 /backend/note.md
 
 
-/data/*
-/data/
-*/data/*
-
+/data/latlon/*
+/data/latlon/
+/data/generated_itineraries/
+/data/generated_itineraries/*
+/app/path.txt
 /app/old/*
 /app/old/
 

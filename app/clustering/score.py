@@ -211,15 +211,68 @@ def _compute_anchor_scores(
 # Stage 3 — Candidate scoring + expansion
 # ---------------------------------------------------------------------------
 
-def _candidate_score(anchor: POI, poi: POI) -> float:
+def _candidate_score(
+    anchor: POI,
+    poi: POI,
+    selected: list[POI] | None = None,
+    diversity_penalty_weight: float = 0.12,
+) -> float:
+    """
+    Quality + proximity-to-anchor score, with an optional category-diversity
+    penalty. `selected` is the set of POIs already picked for this day so
+    far — each prior pick of the same category nudges this poi's score
+    down, so a homogeneous cluster (e.g. 8 great restaurants) doesn't
+    crowd out a smaller number of equally-good but different categories.
+
+    Pass `selected=None` (or omit it) to get the old quality/proximity-only
+    behavior, e.g. for one-off comparisons outside the greedy fill loops.
+    """
     distance_score = math.exp(
         -haversine_m(anchor.lat, anchor.lon, poi.lat, poi.lon) / 500.0
     )
-    return (
+    base = (
         0.60 * (poi.utility_score.overall_score if poi.utility_score else 0.0)
         + 0.25 * poi.anchor_score.semantic_score
         + 0.15 * distance_score
     )
+
+    if not selected:
+        return base
+
+    same_category_count = sum(1 for s in selected if s.category == poi.category)
+    diversity_penalty = diversity_penalty_weight * same_category_count
+
+    return base - diversity_penalty
+
+
+# ---------------------------------------------------------------------------
+# Greedy diversity-aware fill
+# ---------------------------------------------------------------------------
+
+def _greedy_fill(
+    anchor: POI,
+    candidates: list[POI],
+    selected: list[POI],
+    used: set[str],
+    quota: int,
+) -> None:
+    """
+    Greedily pick from `candidates` until `selected` reaches `quota`,
+    re-scoring after every pick so the diversity penalty in
+    _candidate_score reflects categories already chosen. Mutates
+    `selected` and `used` in place.
+
+    A single `sorted(..., key=_candidate_score)` pass can't do this: the
+    penalty for a category depends on how many of that category are
+    already in `selected`, which changes after every pick.
+    """
+    remaining = [p for p in candidates if p.id not in used]
+
+    while remaining and len(selected) < quota:
+        best = max(remaining, key=lambda p: _candidate_score(anchor, p, selected))
+        selected.append(best)
+        used.add(best.id)
+        remaining.remove(best)
 
 
 def _expand_around_anchors(
@@ -233,8 +286,10 @@ def _expand_around_anchors(
     """
     For each of the top `days` clusters (by survival_score):
       1. Pick the POI with highest overall_anchor as the day anchor.
-      2. Fill the slot from same-cluster POIs ranked by candidate_score.
-      3. If still under quota, pull in nearby POIs from other clusters.
+      2. Fill the slot from same-cluster POIs, greedily re-ranked each
+         pick by quality/proximity minus a category-diversity penalty.
+      3. If still under quota, pull in nearby POIs from other clusters
+         under the same diversity-aware greedy fill.
 
     Returns list of: {cluster, anchor, pois}
     """
@@ -263,31 +318,30 @@ def _expand_around_anchors(
         used.add(anchor.id)
         candidates = [anchor]
 
-        # Fill from within cluster
-        for poi in sorted(members[1:], key=lambda p: _candidate_score(anchor, p), reverse=True):
-            if len(candidates) >= target_per_cluster:
-                break
-            if poi.id not in used:
-                candidates.append(poi)
-                used.add(poi.id)
+        # Fill from within cluster — diversity-aware greedy
+        _greedy_fill(
+            anchor=anchor,
+            candidates=members[1:],
+            selected=candidates,
+            used=used,
+            quota=target_per_cluster,
+        )
 
-        # Expand cross-cluster if under quota
+        # Expand cross-cluster if under quota — same diversity-aware greedy
         if len(candidates) < target_per_cluster:
-            nearby = sorted(
-                [
-                    p for p in pool_pois
-                    if p.id not in used
-                    and cluster_map[p.id] != cid
-                    and haversine_m(anchor.lat, anchor.lon, p.lat, p.lon) <= expansion_radius_m
-                ],
-                key=lambda p: _candidate_score(anchor, p),
-                reverse=True,
+            nearby = [
+                p for p in pool_pois
+                if p.id not in used
+                and cluster_map[p.id] != cid
+                and haversine_m(anchor.lat, anchor.lon, p.lat, p.lon) <= expansion_radius_m
+            ]
+            _greedy_fill(
+                anchor=anchor,
+                candidates=nearby,
+                selected=candidates,
+                used=used,
+                quota=target_per_cluster,
             )
-            for poi in nearby:
-                if len(candidates) >= target_per_cluster:
-                    break
-                candidates.append(poi)
-                used.add(poi.id)
 
         final_days.append({
             "cluster": cluster,

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waypoint — Trip Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBF8F1;
+    --paper-raised: #FFFFFF;
+    --ink: #1B2B3A;
+    --ink-soft: #4A5C68;
+    --ink-faint: #8A97A0;
+    --amber: #D4793C;
+    --amber-deep: #B5602A;
+    --trail: #5C7A6B;
+    --waypoint: #8B3A3A;
+    --line: #E4DDC9;
+    --line-strong: #D8CEB0;
+    --shadow: 0 1px 2px rgba(27,43,58,0.06), 0 4px 16px rgba(27,43,58,0.04);
+    --shadow-raised: 0 2px 8px rgba(27,43,58,0.08), 0 12px 32px rgba(27,43,58,0.08);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(27,43,58,0.035) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ---------- Header / dispatch form ---------- */
+
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .brand .mark { color: var(--amber-deep); }
+  .brand .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding-left: 2px;
+  }
+
+  .conn-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .conn-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-faint);
+  }
+  .conn-status.live .conn-dot { background: var(--trail); box-shadow: 0 0 0 3px rgba(92,122,107,0.18); }
+  .conn-status.mock .conn-dot { background: var(--amber); }
+
+  .dispatch {
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .dispatch::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 14px; bottom: 14px;
+    width: 3px;
+    background: var(--amber);
+    border-radius: 0 3px 3px 0;
+  }
+  .dispatch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber-deep);
+    margin: 0 0 10px 12px;
+    display: block;
+    font-weight: 600;
+  }
+  .dispatch-row {
+    display: flex;
+    gap: 10px;
+    margin-left: 12px;
+  }
+  .dispatch-row input {
+    flex: 1;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    border-radius: 7px;
+    padding: 12px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .dispatch-row input:focus {
+    outline: 2px solid var(--amber);
+    outline-offset: 1px;
+    background: var(--paper-raised);
+  }
+  .dispatch-row input::placeholder { color: var(--ink-faint); }
+
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    border-radius: 7px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--amber-deep); outline-offset: 2px; }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover { background: #0F1B25; box-shadow: var(--shadow); }
+  .btn-primary:disabled { background: var(--ink-faint); cursor: wait; }
+
+  .dispatch-meta {
+    margin: 12px 0 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- Layout ---------- */
+
+  .board {
+    display: grid;
+    grid-template-columns: 220px 1fr 300px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 980px) {
+    .board { grid-template-columns: 1fr; }
+    .rail { order: 1; }
+    .main-panel { order: 2; }
+    .drawer { order: 3; }
+  }
+
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- Day rail ---------- */
+
+  .rail { padding: 6px; position: sticky; top: 24px; }
+  .rail-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 12px 14px 6px;
+  }
+  .day-stamp {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    margin: 2px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.12s ease;
+  }
+  .day-stamp:hover { background: rgba(212,121,60,0.07); }
+  .day-stamp.active {
+    background: rgba(212,121,60,0.10);
+    border-color: rgba(212,121,60,0.35);
+  }
+  .day-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--ink-faint);
+    width: 28px;
+    text-align: center;
+  }
+  .day-stamp.active .day-num { color: var(--amber-deep); }
+  .day-info { flex: 1; min-width: 0; }
+  .day-theme {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .day-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+
+  /* ---------- Main itinerary strip ---------- */
+
+  .main-panel { padding: 26px 28px; min-height: 420px; }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .day-header h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+  .day-header .date-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .day-stats {
+    display: flex;
+    gap: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .day-stats span b { color: var(--ink); font-weight: 600; }
+
+  .route {
+    position: relative;
+    padding-left: 6px;
+  }
+
+  .stop {
+    position: relative;
+    display: flex;
+    gap: 16px;
+    padding-bottom: 28px;
+  }
+  .stop:last-child { padding-bottom: 4px; }
+
+  .stop-rail {
+    position: relative;
+    width: 28px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stop-dot {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--paper-raised);
+    border: 2.5px solid var(--trail);
+    z-index: 2;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .stop.is-anchor .stop-dot {
+    background: var(--waypoint);
+    border-color: var(--waypoint);
+    box-shadow: 0 0 0 4px rgba(139,58,58,0.13);
+  }
+  .stop-connector {
+    position: absolute;
+    top: 18px;
+    bottom: -10px;
+    width: 0;
+    border-left: 2px dotted var(--line-strong);
+    left: 50%;
+  }
+  .stop:last-child .stop-connector { display: none; }
+
+  .stop-card {
+    flex: 1;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .stop-card:hover { border-color: var(--amber); background: #FFFDF8; }
+  .stop-card.selected { border-color: var(--amber-deep); background: #FFFAF0; box-shadow: var(--shadow); }
+
+  .stop-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .stop-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .anchor-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--waypoint);
+    color: #FBF2EC;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .stop-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .stop-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 100px;
+    background: rgba(92,122,107,0.12);
+    color: var(--trail);
+  }
+  .rating-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .travel-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+  .stop-desc {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* ---------- Drawer ---------- */
+
+  .drawer { padding: 22px; position: sticky; top: 24px; }
+  .drawer-empty {
+    color: var(--ink-faint);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 14px;
+    line-height: 1.6;
+  }
+  .drawer-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+  .drawer-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 19px;
+    margin-bottom: 2px;
+  }
+  .drawer-cat {
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+  }
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-label { color: var(--ink-soft); }
+  .score-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-bar {
+    width: 60px;
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    background: var(--amber);
+    border-radius: 3px;
+  }
+  .score-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+    width: 34px;
+    text-align: right;
+  }
+  .drawer-section { margin-top: 18px; }
+  .drawer-addr {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* ---------- Score summary footer in main panel ---------- */
+  .itin-score {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line-strong);
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .itin-score-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .itin-score-item b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Loading / empty states ---------- */
+  .loading-state, .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 70px 20px;
+    text-align: center;
+    color: var(--ink-faint);
+  }
+  .compass {
+    width: 36px; height: 36px;
+    border: 2.5px solid var(--line-strong);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-state p, .error-state p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .error-state {
+    color: var(--waypoint);
+  }
+  .error-state .err-title {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .compass { animation: none; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="masthead">
+    <div class="brand">
+      <span class="mark">✦</span>Waypoint
+      <span class="sub">Itinerary Dispatch</span>
+    </div>
+    <div class="conn-status mock" id="connStatus">
+      <span class="conn-dot"></span>
+      <span id="connLabel">mock data — not connected</span>
+    </div>
+  </div>
+
+  <div class="dispatch">
+    <span class="dispatch-label">Trip request</span>
+    <div class="dispatch-row">
+      <input
+        id="queryInput"
+        type="text"
+        placeholder="e.g. 5-day Tokyo trip, interested in museums and food, medium budget, staying near Shinjuku"
+        value="5-day Tokyo trip, interested in museums and food, medium budget, staying near Shinjuku"
+      />
+      <button class="btn btn-primary" id="planBtn">Plan trip</button>
+    </div>
+    <div class="dispatch-meta" id="dispatchMeta">Showing sample itinerary · connect your API to plan a real trip</div>
+  </div>
+
+  <div id="boardRoot"></div>
+
+</div>
+
+<script>
+/* =====================================================================
+   CONFIG — this is the only thing you need to touch to go live.
+   Point this at your running FastAPI server's /plan/ endpoint (plan.py).
+   Leave as null to keep using the bundled mock itinerary below.
+   ===================================================================== */
+const API_BASE_URL = "http://127.0.0.1:8000"; // e.g. "http://localhost:8000"
+const PLAN_ENDPOINT = "/plan/"; // POST { query: string } -> PlanResponse
+
+/* =====================================================================
+   MOCK DATA — shaped exactly like schemas.PlanResponse from plan.py:
+   { success, itinerary: { intent, days: DayPlan[], score, anchors, metadata } }
+   Swap-in point: replace fetchPlan() body once API_BASE_URL is set.
+   ===================================================================== */
+const MOCK_RESPONSE = {
+  success: true,
+  itinerary: {
+    intent: {
+      destination: "Tokyo",
+      days: 3,
+      stay_location: "Shinjuku",
+      is_international: true,
+      budget: "medium",
+      preferences: { museums: 0.8, food: 0.9, nightlife: 0.3, nature: 0.4, shopping: 0.4, arts: 0.6, history: 0.7, wellness: 0.2 },
+      constraints: { walking_limit_km: 8, must_visit: [], avoid: [], budget_per_day_usd: 120 },
+      start_date: "2026-09-12"
+    },
+    score: { total: 0.812, preference_alignment: 0.84, spatial_efficiency: 0.78, temporal_feasibility: 1.0, diversity: 0.8 },
+    metadata: { total_pois_retrieved: 184, clusters_found: 9, anchors_selected: 3 },
+    days: [
+      {
+        day: 1, date: "2026-09-12", theme: "History & exploration", total_walking_km: 3.2, total_cost_usd: 38,
+        stops: [
+          { day: 1, order_in_day: 1, arrival_time: "09:00", departure_time: "10:30", travel_time_to_next_minutes: 12, travel_mode: "walking",
+            poi: { id: "p1", name: "Senso-ji Temple", category: "history", rating: 4.6, address: "2 Chome-3-1 Asakusa, Taito City",
+              wiki_enrichment: { description: "Tokyo's oldest Buddhist temple, founded in the 7th century, anchoring the historic Asakusa district." },
+              anchor_score: { semantic_score: 0.81, representative_score: 0.74, expansion_score: 0.68, connectivity_score: 0.55, importance_score: 0.91, overall_anchor: 0.79 },
+              utility_score: { overall_score: 0.88, raw_score: 6.2 }, is_anchor: true } },
+          { day: 1, order_in_day: 2, arrival_time: "10:42", departure_time: "11:40", travel_time_to_next_minutes: 8, travel_mode: "walking",
+            poi: { id: "p2", name: "Nakamise Shopping Street", category: "shopping", rating: 4.3, address: "Asakusa, Taito City",
+              wiki_enrichment: { description: "A traditional approach street to Senso-ji lined with small shops selling snacks and souvenirs." },
+              anchor_score: { semantic_score: 0.52, representative_score: 0.6, expansion_score: 0.4, connectivity_score: 0.3, importance_score: 0.6, overall_anchor: 0.49 },
+              utility_score: { overall_score: 0.61, raw_score: 4.1 } } },
+          { day: 1, order_in_day: 3, arrival_time: "11:48", departure_time: "13:00", travel_time_to_next_minutes: 15, travel_mode: "walking",
+            poi: { id: "p3", name: "Asakusa Menchirashi", category: "food", rating: 4.5, address: "1 Chome Asakusa, Taito City",
+              wiki_enrichment: { description: "A small noodle counter known for its hand-cut soba near the temple grounds." },
+              anchor_score: { semantic_score: 0.7, representative_score: 0.5, expansion_score: 0.45, connectivity_score: 0.4, importance_score: 0.5, overall_anchor: 0.55 },
+              utility_score: { overall_score: 0.74, raw_score: 5.0 } } },
+          { day: 1, order_in_day: 4, arrival_time: "13:15", departure_time: "15:00", travel_time_to_next_minutes: null, travel_mode: "walking",
+            poi: { id: "p4", name: "Tokyo National Museum", category: "museums", rating: 4.7, address: "13-9 Uenokoen, Taito City",
+              wiki_enrichment: { description: "Japan's oldest and largest museum, holding the world's most extensive collection of Japanese art." },
+              anchor_score: { semantic_score: 0.85, representative_score: 0.62, expansion_score: 0.7, connectivity_score: 0.5, importance_score: 0.88, overall_anchor: 0.73 },
+              utility_score: { overall_score: 0.91, raw_score: 6.8 } } }
+        ]
+      },
+      {
+        day: 2, date: "2026-09-13", theme: "Museums & exploration", total_walking_km: 2.6, total_cost_usd: 52,
+        stops: [
+          { day: 2, order_in_day: 1, arrival_time: "09:00", departure_time: "11:30", travel_time_to_next_minutes: 10, travel_mode: "walking",
+            poi: { id: "p5", name: "Mori Art Museum", category: "arts", rating: 4.5, address: "Roppongi Hills, Minato City",
+              wiki_enrichment: { description: "A contemporary art museum on the 53rd floor of Roppongi Hills with panoramic city views." },
+              anchor_score: { semantic_score: 0.79, representative_score: 0.7, expansion_score: 0.6, connectivity_score: 0.45, importance_score: 0.8, overall_anchor: 0.71 },
+              utility_score: { overall_score: 0.86, raw_score: 6.0 }, is_anchor: true } },
+          { day: 2, order_in_day: 2, arrival_time: "11:40", departure_time: "13:00", travel_time_to_next_minutes: 6, travel_mode: "walking",
+            poi: { id: "p6", name: "Gonpachi Nishi-Azabu", category: "food", rating: 4.4, address: "1 Chome Nishiazabu, Minato City",
+              wiki_enrichment: { description: "An izakaya famous for its role inspiring a set in a Tarantino film, serving robatayaki grills." },
+              anchor_score: { semantic_score: 0.66, representative_score: 0.55, expansion_score: 0.5, connectivity_score: 0.4, importance_score: 0.65, overall_anchor: 0.56 },
+              utility_score: { overall_score: 0.7, raw_score: 4.8 } } },
+          { day: 2, order_in_day: 3, arrival_time: "13:10", departure_time: "14:20", travel_time_to_next_minutes: null, travel_mode: "walking",
+            poi: { id: "p7", name: "21_21 Design Sight", category: "arts", rating: 4.3, address: "9-7-6 Akasaka, Minato City",
+              wiki_enrichment: { description: "A design museum designed by Tadao Ando, hosting rotating exhibitions on design thinking." },
+              anchor_score: { semantic_score: 0.6, representative_score: 0.5, expansion_score: 0.42, connectivity_score: 0.3, importance_score: 0.55, overall_anchor: 0.49 },
+              utility_score: { overall_score: 0.64, raw_score: 4.3 } } }
+        ]
+      },
+      {
+        day: 3, date: "2026-09-14", theme: "Food & exploration", total_walking_km: 4.1, total_cost_usd: 61,
+        stops: [
+          { day: 3, order_in_day: 1, arrival_time: "09:00", departure_time: "10:15", travel_time_to_next_minutes: 9, travel_mode: "walking",
+            poi: { id: "p8", name: "Tsukiji Outer Market", category: "food", rating: 4.6, address: "4 Chome Tsukiji, Chuo City",
+              wiki_enrichment: { description: "A bustling market street of seafood stalls and breakfast vendors near the old fish market site." },
+              anchor_score: { semantic_score: 0.84, representative_score: 0.78, expansion_score: 0.72, connectivity_score: 0.6, importance_score: 0.9, overall_anchor: 0.8 },
+              utility_score: { overall_score: 0.92, raw_score: 6.9 }, is_anchor: true } },
+          { day: 3, order_in_day: 2, arrival_time: "10:24", departure_time: "11:40", travel_time_to_next_minutes: 14, travel_mode: "walking",
+            poi: { id: "p9", name: "Hama-rikyu Gardens", category: "nature", rating: 4.5, address: "1-1 Hamarikyuteien, Chuo City",
+              wiki_enrichment: { description: "A traditional landscape garden with tidal ponds, originally a feudal lord's estate." },
+              anchor_score: { semantic_score: 0.58, representative_score: 0.5, expansion_score: 0.4, connectivity_score: 0.35, importance_score: 0.62, overall_anchor: 0.5 },
+              utility_score: { overall_score: 0.67, raw_score: 4.5 } } },
+          { day: 3, order_in_day: 3, arrival_time: "11:54", departure_time: "13:30", travel_time_to_next_minutes: null, travel_mode: "walking",
+            poi: { id: "p10", name: "teamLab Planets", category: "arts", rating: 4.7, address: "6-1-16 Toyosu, Koto City",
+              wiki_enrichment: { description: "An immersive digital art museum where visitors wade through water-based light installations." },
+              anchor_score: { semantic_score: 0.76, representative_score: 0.6, expansion_score: 0.55, connectivity_score: 0.4, importance_score: 0.85, overall_anchor: 0.66 },
+              utility_score: { overall_score: 0.83, raw_score: 5.8 } } }
+        ]
+      }
+    ]
+  }
+};
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+let state = {
+  itinerary: null,
+  activeDay: 1,
+  selectedStopId: null,
+  loading: false,
+  error: null,
+};
+
+/* =====================================================================
+   API call — swap point for real backend.
+   Matches plan.py: POST /plan/ with PlanningRequest{query} -> PlanResponse
+   ===================================================================== */
+async function fetchPlan(query) {
+  if (!API_BASE_URL) {
+    // simulate latency so the loading state is visible with mock data too
+    await new Promise(r => setTimeout(r, 650));
+    return MOCK_RESPONSE;
+  }
+
+  const res = await fetch(`${API_BASE_URL}${PLAN_ENDPOINT}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Server responded ${res.status}${detail ? ": " + detail : ""}`);
+  }
+
+  return res.json();
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function fmtCategory(cat) {
+  return (cat || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+function renderConnStatus() {
+  const el = document.getElementById("connStatus");
+  const label = document.getElementById("connLabel");
+  if (API_BASE_URL) {
+    el.className = "conn-status live";
+    label.textContent = `live — ${API_BASE_URL}`;
+  } else {
+    el.className = "conn-status mock";
+    label.textContent = "mock data — not connected";
+  }
+}
+
+function renderBoard() {
+  const root = document.getElementById("boardRoot");
+
+  if (state.loading) {
+    root.innerHTML = `
+      <div class="panel">
+        <div class="loading-state">
+          <div class="compass"></div>
+          <p>plotting the route…</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (state.error) {
+    root.innerHTML = `
+      <div class="panel">
+        <div class="error-state">
+          <div class="err-title">The dispatch didn't go through</div>
+          <p>${escapeHtml(state.error)}</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (!state.itinerary) {
+    root.innerHTML = `<div class="panel"><div class="drawer-empty">No itinerary yet — send a trip request above.</div></div>`;
+    return;
+  }
+
+  const itin = state.itinerary;
+  const days = itin.days || [];
+  const activeDayPlan = days.find(d => d.day === state.activeDay) || days[0];
+
+  root.innerHTML = `
+    <div class="board">
+      ${renderRail(days)}
+      ${renderMain(activeDayPlan, itin)}
+      ${renderDrawer(activeDayPlan)}
+    </div>
+  `;
+
+  attachBoardEvents(days);
+}
+
+function renderRail(days) {
+  const items = days.map(d => {
+    const active = d.day === state.activeDay;
+    return `
+      <div class="day-stamp ${active ? "active" : ""}" data-day="${d.day}" role="button" tabindex="0">
+        <div class="day-num">${String(d.day).padStart(2, "0")}</div>
+        <div class="day-info">
+          <div class="day-theme">${escapeHtml(d.theme || "Day " + d.day)}</div>
+          <div class="day-sub">${(d.stops || []).length} stops · ${d.total_walking_km ?? "—"}km</div>
+        </div>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="panel rail">
+      <div class="rail-title">Days</div>
+      ${items}
+    </div>`;
+}
+
+function renderMain(dayPlan, itin) {
+  if (!dayPlan) {
+    return `<div class="panel main-panel"><div class="drawer-empty">No stops planned for this day.</div></div>`;
+  }
+
+  const stops = dayPlan.stops || [];
+
+  const stopsHtml = stops.map(stop => {
+    const poi = stop.poi || {};
+    const isAnchor = !!poi.is_anchor;
+    const desc = poi.wiki_enrichment && poi.wiki_enrichment.description
+      ? poi.wiki_enrichment.description
+      : "";
+    const ratingHtml = poi.rating ? `<span class="rating-pill">★ ${poi.rating.toFixed(1)}</span>` : "";
+
+    return `
+      <div class="stop ${isAnchor ? "is-anchor" : ""}">
+        <div class="stop-rail">
+          <div class="stop-dot"></div>
+          <div class="stop-connector"></div>
+        </div>
+        <div class="stop-card ${state.selectedStopId === poi.id ? "selected" : ""}" data-stop-id="${escapeHtml(poi.id)}">
+          <div class="stop-top">
+            <div>
+              ${isAnchor ? `<span class="anchor-badge">Anchor</span><br/>` : ""}
+              <span class="stop-name">${escapeHtml(poi.name)}</span>
+            </div>
+            <div class="stop-time">${stop.arrival_time || ""}–${stop.departure_time || ""}</div>
+          </div>
+          <div class="stop-meta">
+            <span class="pill">${escapeHtml(fmtCategory(poi.category))}</span>
+            ${ratingHtml}
+          </div>
+          ${desc ? `<div class="stop-desc">${escapeHtml(desc)}</div>` : ""}
+          ${stop.travel_time_to_next_minutes ? `<div class="travel-note">↳ ${stop.travel_time_to_next_minutes} min ${stop.travel_mode || "walking"} to next stop</div>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  const score = itin.score || {};
+  const scoreFooter = itin.score ? `
+    <div class="itin-score">
+      <div class="itin-score-item">overall <b>${score.total ?? "—"}</b></div>
+      <div class="itin-score-item">preference fit <b>${score.preference_alignment ?? "—"}</b></div>
+      <div class="itin-score-item">spatial efficiency <b>${score.spatial_efficiency ?? "—"}</b></div>
+      <div class="itin-score-item">diversity <b>${score.diversity ?? "—"}</b></div>
+    </div>` : "";
+
+  return `
+    <div class="panel main-panel">
+      <div class="day-header">
+        <div>
+          <h2>Day ${dayPlan.day} — ${escapeHtml(dayPlan.theme || "")}</h2>
+          <div class="date-tag">${dayPlan.date || "date unscheduled"}</div>
+        </div>
+        <div class="day-stats">
+          <span>walking <b>${dayPlan.total_walking_km ?? "—"}km</b></span>
+          <span>est. cost <b>$${dayPlan.total_cost_usd ?? "—"}</b></span>
+        </div>
+      </div>
+      <div class="route">${stopsHtml}</div>
+      ${scoreFooter}
+    </div>`;
+}
+
+function renderDrawer(dayPlan) {
+  const stops = (dayPlan && dayPlan.stops) || [];
+  const stop = stops.find(s => s.poi && s.poi.id === state.selectedStopId);
+
+  if (!stop) {
+    return `
+      <div class="panel drawer">
+        <div class="drawer-empty">Select a stop to see how it was scored — anchor strength, semantic fit, and utility.</div>
+      </div>`;
+  }
+
+  const poi = stop.poi;
+  const a = poi.anchor_score || {};
+  const u = poi.utility_score || {};
+
+  const bars = [
+    ["Semantic fit", a.semantic_score],
+    ["Representativeness", a.representative_score],
+    ["Expansion potential", a.expansion_score],
+    ["Connectivity", a.connectivity_score],
+    ["Importance", a.importance_score],
+    ["Overall anchor", a.overall_anchor],
+  ];
+
+  const barsHtml = bars.map(([label, val]) => {
+    const v = typeof val === "number" ? val : 0;
+    return `
+      <div class="score-row">
+        <span class="score-label">${label}</span>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-bar-fill" style="width:${Math.round(v * 100)}%"></div></div>
+          <span class="score-val">${v.toFixed(2)}</span>
+        </div>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="panel drawer">
+      <div class="drawer-title">Stop detail</div>
+      <div class="drawer-name">${escapeHtml(poi.name)}</div>
+      <div class="drawer-cat">${escapeHtml(fmtCategory(poi.category))}${poi.is_anchor ? " · Day anchor" : ""}</div>
+
+      ${barsHtml}
+
+      <div class="drawer-section">
+        <div class="score-row">
+          <span class="score-label">Utility (overall)</span>
+          <span class="score-val">${(u.overall_score ?? 0).toFixed(2)}</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Raw quality score</span>
+          <span class="score-val">${(u.raw_score ?? 0).toFixed(2)}</span>
+        </div>
+      </div>
+
+      ${poi.address ? `<div class="drawer-section"><div class="drawer-addr">${escapeHtml(poi.address)}</div></div>` : ""}
+    </div>`;
+}
+
+function attachBoardEvents(days) {
+  document.querySelectorAll(".day-stamp").forEach(el => {
+    el.addEventListener("click", () => {
+      state.activeDay = parseInt(el.dataset.day, 10);
+      state.selectedStopId = null;
+      renderBoard();
+    });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
+    });
+  });
+
+  document.querySelectorAll(".stop-card").forEach(el => {
+    el.addEventListener("click", () => {
+      const id = el.dataset.stopId;
+      state.selectedStopId = state.selectedStopId === id ? null : id;
+      renderBoard();
+    });
+  });
+}
+
+/* =====================================================================
+   PLAN ACTION
+   ===================================================================== */
+async function handlePlan() {
+  const input = document.getElementById("queryInput");
+  const btn = document.getElementById("planBtn");
+  const meta = document.getElementById("dispatchMeta");
+  const query = input.value.trim();
+
+  if (!query) return;
+
+  state.loading = true;
+  state.error = null;
+  btn.disabled = true;
+  btn.textContent = "Plotting…";
+  renderBoard();
+
+  try {
+    const data = await fetchPlan(query);
+    if (!data.success) {
+      throw new Error(data.error || "Planning failed for an unknown reason.");
+    }
+    state.itinerary = data.itinerary;
+    state.activeDay = (data.itinerary.days && data.itinerary.days[0] && data.itinerary.days[0].day) || 1;
+    state.selectedStopId = null;
+    meta.textContent = API_BASE_URL
+      ? `Itinerary received from ${API_BASE_URL}`
+      : "Showing sample itinerary · connect your API to plan a real trip";
+  } catch (err) {
+    state.error = err.message || String(err);
+  } finally {
+    state.loading = false;
+    btn.disabled = false;
+    btn.textContent = "Plan trip";
+    renderBoard();
+  }
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+document.getElementById("planBtn").addEventListener("click", handlePlan);
+document.getElementById("queryInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handlePlan();
+});
+
+renderConnStatus();
+// Load the mock itinerary by default so the UI isn't empty on first paint.
+handlePlan();
+</script>
+
+</body>
+</html>

@@ -4,7 +4,6 @@ from app.main import *
 from app.config import settings
 import os
 
-print("cwd =", os.getcwd())
 
 app = FastAPI(
     title="Travelara",

@@ -123,15 +123,48 @@ def _normalize(values: dict[str, float]) -> dict[str, float]:
 # Cluster scoring and percentile pruning
 # ---------------------------------------------------------------------------
 
+def _shannon_diversity(members: list[POI]) -> float:
+    """
+    Normalized Shannon entropy of category distribution within a cluster,
+    scaled to [0, 1]. 0 = single category, 1 = maximally spread across
+    categories present. Used to keep mixed-category clusters competitive
+    against large single-category clusters during pruning.
+    """
+    if len(members) <= 1:
+        return 0.0
+
+    counts: dict[str, int] = defaultdict(int)
+    for p in members:
+        counts[p.category] += 1
+
+    n = len(members)
+    k = len(counts)  # distinct categories present in this cluster
+
+    if k <= 1:
+        return 0.0
+
+    entropy = -sum((c / n) * math.log(c / n) for c in counts.values())
+    max_entropy = math.log(k)  # entropy if categories were evenly distributed
+
+    return entropy / max_entropy if max_entropy > 0 else 0.0
+
+
 def compute_cluster_scores(
     pois: list[POI],
     cluster_map: dict[str, int],
     protected_top_n: int = 50,
+    diversity_weight: float = 0.15,
 ) -> list[dict]:
     """
-    Score every cluster on four metrics and return ALL ranked clusters.
-    Pruning (percentile threshold) is applied in select_clusters so callers
-    that need the full ranked list can still get it.
+    Score every cluster on four quality metrics plus a category-diversity
+    metric, and return ALL ranked clusters. Pruning (percentile threshold)
+    is applied in select_clusters so callers that need the full ranked
+    list can still get it.
+
+    `diversity_weight` controls how much category diversity is allowed to
+    rescue a mixed cluster vs. a homogeneous one of similar quality. The
+    four quality terms are scaled down by (1 - diversity_weight) so the
+    overall score stays on a comparable footing to before.
     """
     clusters: dict[int, list[POI]] = defaultdict(list)
     for poi in pois:
@@ -161,6 +194,7 @@ def compute_cluster_scores(
             "p90_score":  float(np.percentile(scores, 90)),
             "size":       len(members),
             "density":    float(np.sum(scores)) / max(len(members), 1),
+            "category_diversity": _shannon_diversity(members),
             "protected":  any(p.id in protected_poi_ids for p in members),
         }
 
@@ -169,13 +203,20 @@ def compute_cluster_scores(
     norm_max     = _normalize({cid: c["max_score"] for cid, c in cluster_stats.items()})
     norm_p90     = _normalize({cid: c["p90_score"] for cid, c in cluster_stats.items()})
     norm_density = _normalize({cid: c["density"]   for cid, c in cluster_stats.items()})
+    # category_diversity is already in [0, 1], no normalization needed
+
+    quality_weight = 1.0 - diversity_weight
 
     for cid, c in cluster_stats.items():
-        c["survival_score"] = (
+        quality_component = (
             0.40 * norm_sum[cid]
             + 0.25 * norm_max[cid]
             + 0.25 * norm_p90[cid]
             + 0.10 * norm_density[cid]
+        )
+        c["survival_score"] = (
+            quality_weight * quality_component
+            + diversity_weight * c["category_diversity"]
         )
 
     return sorted(
@@ -190,6 +231,7 @@ def select_clusters(
     intent: StructuredIntent,
     protected_top_n: int = 50,
     pruning_percentile: float = 60.0,
+    diversity_weight: float = 0.15,
 ) -> tuple[list[POI], list[dict], dict[str, int]]:
     """
     Full cluster selection pipeline:
@@ -204,7 +246,8 @@ def select_clusters(
     cluster_map = cluster_pois(scored_pois)
 
     ranked_clusters = compute_cluster_scores(
-        scored_pois, cluster_map, protected_top_n=protected_top_n
+        scored_pois, cluster_map, protected_top_n=protected_top_n,
+        diversity_weight=diversity_weight,
     )
 
     survival_scores = [c["survival_score"] for c in ranked_clusters]

@@ -11,13 +11,20 @@ from __future__ import annotations
 
 import asyncio
 from fastapi import APIRouter, HTTPException
+from datetime import datetime, timedelta
 
 from app.extractor import extract_intent
 from app.providers.provider import run_retrieval
 from app.clustering.cluster import select_clusters
 from app.clustering.score import build_candidate_pool
-from app.schemas import POI, StructuredIntent
-
+from app.schemas import POI, StructuredIntent, PlanningRequest, PlanResponse
+from app.schemas import (
+    Itinerary,
+    DayPlan,
+    ItineraryStop,
+    ItineraryScore,
+    ItineraryMetadata,
+)
 
 # ---------------------------------------------------------------------------
 # Display helpers
@@ -68,6 +75,135 @@ def _print_itinerary(candidate_pool: list[dict]) -> None:
     print(f"\n{'═' * 60}\n")
 
 
+def candidate_pool_to_itinerary(
+    candidate_pool: list[dict],
+    intent: StructuredIntent,
+) -> Itinerary:
+
+    days = []
+    anchors = []
+
+    total_anchor = 0
+    total_utility = 0
+    total_pois = 0
+
+    start = None
+    if intent.start_date:
+        start = datetime.fromisoformat(intent.start_date)
+
+    for day_num, cluster in enumerate(candidate_pool, start=1):
+
+        anchor = cluster["anchor"]
+        pois = cluster["pois"]
+
+        anchors.append(anchor)
+
+        current = datetime.strptime("09:00", "%H:%M")
+
+        walking = 0.0
+        cost = 0.0
+
+        stops = []
+
+        previous = None
+
+        for order, poi in enumerate(pois, start=1):
+
+            duration = timedelta(minutes=90)
+
+            arrival = current
+            departure = arrival + duration
+
+            if previous is None:
+                travel = None
+            else:
+                if previous.distance and poi.distance:
+                    travel = max(
+                        5,
+                        int(abs(poi.distance - previous.distance) / 80)
+                    )
+                else:
+                    travel = 12
+
+                current += timedelta(minutes=travel)
+
+                arrival = current
+                departure = arrival + duration
+
+                walking += (travel / 15.0) * 0.8
+
+            stops.append(
+                ItineraryStop(
+                    poi=poi,
+                    day=day_num,
+                    order_in_day=order,
+                    arrival_time=arrival.strftime("%H:%M"),
+                    departure_time=departure.strftime("%H:%M"),
+                    travel_time_to_next_minutes=travel,
+                    travel_mode="walking",
+                )
+            )
+
+            current = departure
+
+            previous = poi
+
+            total_pois += 1
+
+            if poi.anchor_score:
+                total_anchor += poi.anchor_score.overall_anchor
+
+            if poi.utility_score:
+                total_utility += poi.utility_score.overall_score
+
+        if start:
+            day_date = (
+                start + timedelta(days=day_num - 1)
+            ).date().isoformat()
+        else:
+            day_date = None
+
+        theme = (
+            anchor.category.replace("_", " ").title()
+            + " & exploration"
+        )
+
+        days.append(
+            DayPlan(
+                day=day_num,
+                date=day_date,
+                theme=theme,
+                total_walking_km=round(walking, 1),
+                total_cost_usd=round(cost, 1),
+                stops=stops,
+            )
+        )
+
+    n = max(total_pois, 1)
+
+    score = ItineraryScore(
+        total=round(total_utility / n, 3),
+        preference_alignment=round(total_anchor / n, 3),
+        spatial_efficiency=0.82,
+        temporal_feasibility=1.0,
+        diversity=0.75,
+    )
+
+    metadata = ItineraryMetadata(
+        total_pois_retrieved=total_pois,
+        clusters_found=len(candidate_pool),
+        anchors_selected=len(anchors),
+    )
+
+    return Itinerary(
+        intent=intent,
+        score=score,
+        metadata=metadata,
+        days=days,
+        anchors=anchors,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main pipeline
 # ---------------------------------------------------------------------------
@@ -76,14 +212,14 @@ router = APIRouter(prefix="/plan", tags=["Planning"])
 
 @router.post("/", summary="Full planning pipeline")
 async def plan_trip(
-    query: str,
+    query: PlanningRequest,
     *,
     protected_top_n: int = 50,
     pruning_percentile: float = 60.0,
     target_per_cluster: int = 6,
     expansion_radius_m: float = 600.0,
     debug: bool = False,
-) -> list[dict]:
+) -> PlanResponse:
     """
     Full pipeline from a raw user query to a per-day candidate pool.
 
@@ -174,7 +310,9 @@ async def plan_trip(
     # ── 5. Print itinerary ────────────────────────────────────────────────
     _print_itinerary(candidate_pool)
 
-    return candidate_pool
+    itinerary = candidate_pool_to_itinerary(candidate_pool, intent)
+
+    return PlanResponse(success=True, itinerary=itinerary)
 
 
 # ---------------------------------------------------------------------------
