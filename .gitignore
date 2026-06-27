@@ -255,6 +255,19 @@ __marimo__/
 /backend/note.md
 
 
-/travelara-cd-v2/data/*
-/travelara-cd-v2/data/
-/travelara-cd-v2/
+/data/latlon/*
+/data/latlon/
+/data/generated_itineraries/
+/data/generated_itineraries/*
+/app/path.txt
+/app/old/*
+/app/old/
+
+/experiments/RawResult/*
+/experiments/RawResult/
+/experiments/runs/
+/experiments/runs/*
+
+/docs/*
+/RawResult/*
+/RawResult/

@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.plan import *
+from app.main import *
 from app.config import settings
 import os
 
-print("cwd =", os.getcwd())
 
 app = FastAPI(
     title="Travelara",

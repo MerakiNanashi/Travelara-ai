@@ -19,6 +19,7 @@ Extract trip details from user input and return ONLY valid JSON matching this ex
   "destination": "city name",
   "days": integer,
   "stay_location": "neighborhood or hotel area",
+  "is_international": bool - True if destination is outisde India (non-domestic), else False
   "budget": "low" | "medium" | "high",
   "preferences": {
     "museums": 0.0-1.0,
@@ -93,6 +94,7 @@ async def extract_intent(query: str) -> StructuredIntent:
         destination=parsed["destination"],
         days=int(parsed["days"]),
         stay_location=parsed.get("stay_location", parsed["destination"]),
+        is_international=parsed.get("is_international", True),
         budget=parsed.get("budget", "medium"),
         preferences=Preferences(**parsed.get("preferences", {})),
         constraints=Constraints(**parsed.get("constraints", {})),
