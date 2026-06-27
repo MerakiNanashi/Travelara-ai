@@ -69,6 +69,8 @@ class GeoapifyProvider(BaseProvider):
                                     rating=props.get("datasource", {}).get("raw", {}).get("rating", 3.5), # always default since doesn't exist most often
                                     address=props.get("formatted", ""),
                                     pincode=props.get("postcode", {}),
+                                    wiki_and_media=props.get("wiki_and_media", {}),
+                                    distance=props.get("distance"),
                                     source="geoapify",
                                 )
                             )

@@ -68,6 +68,7 @@ class FoursquareProvider(BaseProvider):
                             rating=place.get("rating", 7.0) / 10 * 5,
                             address=place.get("location", {}).get("formatted_address", ""),
                             pincode=place.get("location", {}).get("postcode", ""),
+                            distance=place.get("distance"),
                             source="foursquare"
                         )
                 )

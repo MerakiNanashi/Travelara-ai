@@ -268,3 +268,5 @@ __marimo__/
 /experiments/runs/*
 
 /docs/*
+/RawResult/*
+/RawResult/

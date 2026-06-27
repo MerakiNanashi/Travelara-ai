@@ -35,8 +35,15 @@ class Constraints(BaseModel):
     avoid: list[str] = Field(default_factory=list)
     budget_per_day_usd: Optional[float] = None
 
-
 class StructuredIntent(BaseModel):
+    """
+Future Updates:
+
+1. Categorize user into new_user, active_user, recurring_user, etc.
+2. Any places visited before? / Level of hiddeness idk?
+3. Triggers for more info extraction from user
+4. 
+    """
     destination: str
     days: int
     stay_location: str
@@ -46,7 +53,13 @@ class StructuredIntent(BaseModel):
     constraints: Constraints
     start_date: Optional[str] = None
 
-
+class AnchorScore(BaseModel):
+    semantic_score: float = 0.0
+    representative_score: float = 0.0
+    expansion_score: float = 0.0
+    connectivity_score: float = 0.0
+    importance_score: float = 0.0
+    overall_anchor: float = 0.0
 # ─── POI ──────────────────────────────────────────────────────────────────────
 
 class POI(BaseModel):
@@ -63,10 +76,14 @@ class POI(BaseModel):
     reviews: int | None = None
     address: str = ""
     pincode: str = ""
+    wiki_and_media: dict = Field(default_factory=dict)
+    distance: int | None = None
     source: str = "foursquare"
 
     # Scoring fields (populated during planning)
-    utility_score: QualityScore
+    utility_score: Optional[QualityScore] = None
+    anchor_score: AnchorScore = Field(default_factory=AnchorScore)
+    wiki_enrichment: str | dict | list | None = None
 
 
 # ─── Itinerary ────────────────────────────────────────────────────────────────
@@ -140,3 +157,14 @@ class QualityScore(BaseModel):
     overall_score: float = 0.0
     raw_score: float = 0.0
     reasons: list[str] = Field(default_factory=list)
+
+
+class ClusterMetrics(BaseModel):
+    cluster_id: int
+    sum_score: float
+    max_score: float
+    p90_score: float
+    size: int
+    density: float
+    survival_score: float
+    protected: bool
