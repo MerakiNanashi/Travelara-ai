@@ -17,13 +17,17 @@ from app.extractor import extract_intent
 from app.providers.provider import run_retrieval
 from app.clustering.cluster import select_clusters
 from app.clustering.score import build_candidate_pool
-from app.schemas import POI, StructuredIntent, PlanningRequest, PlanResponse
 from app.schemas import (
+    POI, 
+    StructuredIntent, 
+    PlanningRequest,
+    PlanResponse,
     Itinerary,
     DayPlan,
     ItineraryStop,
     ItineraryScore,
     ItineraryMetadata,
+    ExtractionResult
 )
 
 # ---------------------------------------------------------------------------
@@ -218,7 +222,7 @@ async def plan_trip(
     pruning_percentile: float = 60.0,
     target_per_cluster: int = 6,
     expansion_radius_m: float = 600.0,
-    debug: bool = False,
+    debug: bool = True,
 ) -> PlanResponse:
     """
     Full pipeline from a raw user query to a per-day candidate pool.
@@ -233,14 +237,14 @@ async def plan_trip(
     if debug:
         print("\n=== STEP 1: Intent Extraction ===")
 
-    intent: StructuredIntent = await extract_intent(query)
-
+    result: ExtractionResult = await extract_intent(query)
+    intent: StructuredIntent = result.intent
     if debug:
-        print(f"Destination : {intent.destination}")
-        print(f"Days        : {intent.days}")
-        print(f"Stay        : {intent.stay_location}")
-        print(f"Budget      : {intent.budget}")
-        print(f"Preferences : {intent.preferences.model_dump()}")
+        print(f"Destination : {intent.destination.value}")
+        print(f"Days        : {intent.days.value}")
+        print(f"Stay        : {intent.stay_location.value}")
+        print(f"Budget      : {intent.budget.value}")
+        print(f"Preferences : {[p.model_dump() for p in intent.preferences]}")
         print(f"Constraints : {intent.constraints.model_dump()}")
 
     # ── 2. Retrieve POIs from both providers concurrently ─────────────────
@@ -261,7 +265,7 @@ async def plan_trip(
 
     if not pois:
         raise ValueError(
-            f"No POIs retrieved for '{intent.destination}'. "
+            f"No POIs retrieved for '{intent.destination.value}'. "
             "Check provider API keys and destination spelling."
         )
 
@@ -302,7 +306,7 @@ async def plan_trip(
         selected_clusters=selected_clusters,
         cluster_map=cluster_map,
         intent=intent,
-        days=intent.days,
+        days=intent.days.value or 1,
         target_per_cluster=target_per_cluster,
         expansion_radius_m=expansion_radius_m,
     )

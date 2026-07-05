@@ -33,25 +33,25 @@ class SemanticScorer:
     @staticmethod
     def _build_user_profile(intent: StructuredIntent) -> str:
         prefs = [
-            f"{name} ({value:.2f})"
-            for name, value in intent.preferences.model_dump().items()
-            if value > 0
+            f"{pref.category} ({pref.weight:.2f})"
+            for pref in intent.preferences
+            if pref.weight > 0
         ]
         return f"""
-Destination: {intent.destination}
+Destination: {intent.destination.value}
 
 Stay location:
-{intent.stay_location}
+{intent.stay_location.value}
 
 Budget:
-{intent.budget}
+{intent.budget.value}
 
 Trip length:
-{intent.days} days
+{intent.days.value} days
 
 Walking limit:
 {intent.constraints.walking_limit_km} km
-
+    
 Interested in:
 {", ".join(prefs)}
 """.strip()
@@ -107,7 +107,7 @@ def _apply_semantic_scores(pois: list[POI], intent: StructuredIntent) -> None:
     """Write BGE-M3 similarity scores onto each POI in-place."""
     scorer = SemanticScorer()
     for poi, score in zip(pois, scorer.score(pois, intent)):
-        poi.anchor_score.semantic_score = score
+        poi.planning.anchor.semantic = score
 
 
 # ---------------------------------------------------------------------------
@@ -129,26 +129,28 @@ def _compute_anchor_scores(
         clusters[cluster_map[poi.id]].append(poi)
 
     utility = _normalize({
-        p.id: p.utility_score.raw_score
+        p.id: p.planning.utility.raw if p.planning.utility else 0.0
         for p in pois
-        if p.utility_score is not None
+        if p.planning.utility is not None
     })
 
     for members in clusters.values():
 
         if len(members) == 1:
             poi = members[0]
-            poi.anchor_score.representative_score = 1.0
-            poi.anchor_score.expansion_score      = 1.0
-            poi.anchor_score.connectivity_score   = 1.0
-            poi.anchor_score.importance_score     = poi.popularity_score or 0.0
-            poi.anchor_score.overall_anchor = (
-                0.30 * poi.anchor_score.semantic_score
+            anchor_score = poi.planning.anchor
+            anchor_score.semantic = poi.planning.utility.semantic or 0.0
+            anchor_score.representative = 1.0
+            anchor_score.expansion      = 1.0
+            anchor_score.connectivity   = 1.0
+            anchor_score.importance     = poi.popularity_score or 0.0
+            anchor_score.overall = (
+                0.30 * anchor_score.semantic 
                 + 0.25 * utility.get(poi.id, 0.0)
-                + 0.20 * poi.anchor_score.representative_score
-                + 0.15 * poi.anchor_score.expansion_score
-                + 0.05 * poi.anchor_score.connectivity_score
-                + 0.05 * poi.anchor_score.importance_score
+                + 0.20 * anchor_score.representative
+                + 0.15 * anchor_score.expansion
+                + 0.05 * anchor_score.connectivity
+                + 0.05 * anchor_score.importance
             )
             continue
 
@@ -193,12 +195,13 @@ def _compute_anchor_scores(
 
         for poi in members:
             u = utility.get(poi.id, 0.0)
-            poi.anchor_score.representative_score = represent[poi.id]
-            poi.anchor_score.expansion_score      = expansion[poi.id]
-            poi.anchor_score.connectivity_score   = connectivity[poi.id]
-            poi.anchor_score.importance_score     = importance[poi.id]
-            poi.anchor_score.overall_anchor = (
-                0.30 * poi.anchor_score.semantic_score
+            anchor_score = poi.planning.anchor
+            anchor_score.representative = represent[poi.id]
+            anchor_score.expansion      = expansion[poi.id]
+            anchor_score.connectivity   = connectivity[poi.id]
+            anchor_score.importance     = importance[poi.id]
+            anchor_score.overall = (
+                0.30 * anchor_score.semantic
                 + 0.25 * u
                 + 0.20 * represent[poi.id]
                 + 0.15 * expansion[poi.id]
@@ -231,8 +234,8 @@ def _candidate_score(
         -haversine_m(anchor.lat, anchor.lon, poi.lat, poi.lon) / 500.0
     )
     base = (
-        0.60 * (poi.utility_score.overall_score if poi.utility_score else 0.0)
-        + 0.25 * poi.anchor_score.semantic_score
+        0.60 * (poi.planning.utility.overall if poi.planning.utility else 0.0)
+        + 0.25 * poi.planning.anchor.semantic
         + 0.15 * distance_score
     )
 

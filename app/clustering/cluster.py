@@ -24,15 +24,12 @@ def score_all_pois(pois: list[POI], intent: StructuredIntent) -> list[POI]:
     """Run Filter scoring on all POIs and attach QualityScore to each."""
     filter_obj = Filter()
     scores = filter_obj.score_filter(pois, intent)
-
-    score_lookup = {score.id: score for score in scores}
-
-    for poi in pois:
-        poi.utility_score = score_lookup.get(poi.id)
+    for poi, score in zip(pois, scores):
+        poi.planning.utility = score
 
     return sorted(
         pois,
-        key=lambda p: p.utility_score.raw_score if p.utility_score else 0.0,
+        key=lambda p: p.planning.utility.raw if p.planning.utility else 0.0,
         reverse=True,
     )
 
@@ -173,7 +170,7 @@ def compute_cluster_scores(
     # Top-N POIs globally → their clusters are always protected
     sorted_pois = sorted(
         pois,
-        key=lambda p: p.utility_score.raw_score if p.utility_score is not None else 0.0,
+        key=lambda p: p.planning.utility.raw if p.planning.utility is not None else 0.0,
         reverse=True,
     )
     protected_poi_ids = {p.id for p in sorted_pois[:protected_top_n]}
@@ -182,9 +179,9 @@ def compute_cluster_scores(
 
     for cluster_id, members in clusters.items():
         scores = [
-            p.utility_score.raw_score
+            p.planning.utility.raw
             for p in members
-            if p.utility_score is not None
+            if p.planning.utility is not None
         ] or [0.0]
 
         cluster_stats[cluster_id] = {

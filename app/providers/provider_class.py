@@ -10,16 +10,47 @@ import asyncio
 from datetime import datetime
 from abc import ABC, abstractmethod
 import httpx
-from app.schemas import POI, Preferences
+from app.schemas import POI, Preference_List, Preference, PreferenceType
 from pathlib import Path
 import os
 import json
+
+
+def preferences_to_legacy(
+    preferences: list[Preference],
+) -> Preference_List:
+    """
+    Convert the new sparse Preference list into the legacy dense
+    Preferences object expected by the retrieval layer.
+
+    Rules:
+    - Ignore subjective preferences.
+    - Ignore preferences without a category.
+    - For duplicate categories, keep the highest weight.
+    """
+
+    data = Preference_List().model_dump()
+
+    for pref in preferences:
+        if (
+            pref.type != PreferenceType.OBJECTIVE
+            or pref.category is None
+        ):
+            continue
+
+        category = pref.category
+        data[category] = max(
+            data.get(category, 0.0),
+            pref.weight,
+        )
+
+    return Preference_List(**data)
 
 def make_poi_id(source, id):
     return f"{source}_{id}"
 
 
-def _get_top_preferences(prefs: Preferences,
+def _get_top_preferences(prefs: Preference_List,
                          threshold: float = 0.3,
                          limit: int = 4) -> list[str]:
 
@@ -29,7 +60,7 @@ def _get_top_preferences(prefs: Preferences,
     return [k for k, v in sorted_cats if v >= threshold][:limit]
 
 
-def _get_categorymap(prefs: Preferences,
+def _get_categorymap(prefs: Preference_List,
                      category_map: dict) -> dict[str, list[str]]:
 
     top_cats = _get_top_preferences(prefs, 0.5, 100)
@@ -149,12 +180,14 @@ class BaseProvider(ABC):
     async def retrieve(self,
                        lat: float,
                        lon: float,
-                       prefs: Preferences,
+                       prefs: list[Preference],
                        radius_m: int = 8000,
                        debug: bool = False) -> list[POI]:
-        
+
+        prefs_legacy = preferences_to_legacy(prefs)
+
         selected_categories = _get_categorymap(
-                prefs,
+                prefs_legacy,
                 self.category_map,
             )
   

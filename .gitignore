@@ -262,6 +262,9 @@ __marimo__/
 /app/path.txt
 /app/old/*
 /app/old/
+/app/old/Extractor_1.py
+/app/old/Extractor_old.py
+
 
 /experiments/RawResult/*
 /experiments/RawResult/
@@ -269,5 +272,9 @@ __marimo__/
 /experiments/runs/*
 
 /docs/*
+/docs/
 /RawResult/*
 /RawResult/
+
+/experiments/*
+/experiments/

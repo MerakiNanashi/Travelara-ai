@@ -108,18 +108,18 @@ async def run_retrieval(source,
                         debug: bool = False):
 
     lat, lon = retrieve_latlon(
-        intent.destination,
-        latlon_path if intent.is_international else in_latlon_path
+        intent.destination.value,
+        latlon_path if intent.is_international.value else in_latlon_path
     )
 
     if debug:
         print("\n=== RETRIEVAL START ===")
         print(f"Provider: {source}")
-        print(f"Destination: {intent.destination}")
+        print(f"Destination: {intent.destination.value}")
         print(f"Coordinates: ({lat}, {lon})")
-        print(f"Preferences: {intent.preferences.model_dump()}")
+        print(f"Preferences : {[p.model_dump() for p in intent.preferences]}")
 
-    radius_m = int(intent.constraints.walking_limit_km * 1500)
+    radius_m = int(intent.constraints.walking_limit_km or 10) * 1500
 
     try:
 

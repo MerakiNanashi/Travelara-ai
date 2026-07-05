@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.main import *
 from app.config import settings
-import os
-
 
 app = FastAPI(
     title="Travelara",

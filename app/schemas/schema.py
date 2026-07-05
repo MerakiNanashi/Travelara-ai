@@ -4,32 +4,30 @@ from typing import Optional, Any
 from datetime import date
 from pydantic import BaseModel, Field
 from typing import Optional
+from enum import Enum
 
-# ─── Input / Planning Request ─────────────────────────────────────────────────
-
-class PlanningRequest(BaseModel):
-    """Raw natural-language trip request from the user."""
-    query: str = Field(..., description="Natural language trip description")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "query": "5-day Tokyo trip, interested in museums and food, moderate budget, staying near Shinjuku, avoid excessive walking"
-            }
-        }
 
 # ─── Structured Intent (Extractor output) ─────────────────────────────────────
 
-class Preferences(BaseModel):
-    museums: float = 0.5
-    food: float = 0.5
-    nightlife: float = 0.3
-    nature: float = 0.4
-    shopping: float = 0.3
-    arts: float = 0.4
-    history: float = 0.5
-    wellness: float = 0.3
+class PreferenceType(str, Enum):
+    MUSEUMS = "museums"
+    FOOD = "food"
+    NIGHTLIFE = "nightlife"
+    NATURE = "nature"
+    SHOPPING = "shopping"
+    ARTS = "arts"
+    HISTORY = "history"
+    WELLNESS = "wellness"
 
+
+class Preference(BaseModel):
+    category: PreferenceType | None = None
+    name: str | None = None
+    type: str = Field(pattern="^(objective|subjective)$")     # objective -> retrieval/filtering  subjective -> downstream scoring, ranking, anchor selection, etc.
+    weight: float = Field(default=0.5, ge=0.0, le=1.0)
+    priority: int = Field(default=2, ge=1, le=5)
+    status: str = Field(pattern="^(explicit|inferred|clarification)$")
+    evidence: str | None = None
 
 class Constraints(BaseModel):
     walking_limit_km: float = 10.0
@@ -51,7 +49,7 @@ Future Updates:
     stay_location: Optional[str] = None
     is_international: bool
     budget: str  # low / medium / high
-    preferences: Preferences
+    preferences: list[Preference]
     constraints: Constraints
     start_date: Optional[str] = None
 
@@ -89,12 +87,6 @@ class POI(BaseModel):
 
 
 # ─── API Responses ────────────────────────────────────────────────────────────
-
-class PlanResponse(BaseModel):
-    success: bool
-    itinerary: Optional[Itinerary] = None
-    error: Optional[str] = None
-
 
 class IntentResponse(BaseModel):
     success: bool

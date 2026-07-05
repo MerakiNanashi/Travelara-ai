@@ -1,0 +1,107 @@
+# ============================================================
+# Travelara Default Configuration
+# ============================================================
+
+environment: development
+debug: true
+
+# ============================================================
+# Models
+# ============================================================
+
+models:
+  instruction: gemini-2.5-flash-lite
+  thinking: gemini-2.5-flash
+  embedding: text-embedding-004
+
+# ============================================================
+# Data
+# ============================================================
+
+data:
+  cities500: data/latlon/cities500.txt
+  india_cities: data/latlon/IN.txt
+
+taxonomy:
+  foursquare: data/providers_taxonomy/foursquare_categories.json
+  geoapify: data/providers_taxonomy/geoapify_categories.json
+
+# ============================================================
+# Retrieval
+# ============================================================
+
+retrieval:
+  providers:
+    - foursquare
+    - geoapify
+  radius_km: 25
+  semantic_rerank: true
+  merge_duplicates: true
+
+# ============================================================
+# Graph Construction
+# ============================================================
+
+graph:
+  knn_k: 10
+
+# ============================================================
+# Spatial Clustering
+# ============================================================
+
+clustering:
+  algorithm: dbscan
+  eps_km: 0.6
+  min_samples: 3
+
+# ============================================================
+# Anchor Selection
+# ============================================================
+
+anchors:
+  max_anchors: 6
+  search_radius_km: 2.0
+  weights:
+    semantic: 0.35
+    representative: 0.25
+    connectivity: 0.15
+    expansion: 0.15
+    importance: 0.10
+
+# ============================================================
+# Candidate Utility
+# ============================================================
+
+utility:
+  weights:
+    semantic: 0.35
+    wiki: 0.20
+    tags: 0.15
+    popularity: 0.10
+    source: 0.10
+    external_links: 0.10
+
+# ============================================================
+# Scheduler
+# ============================================================
+
+scheduler:
+  beam_width: 3
+  max_iterations: 200
+
+# ============================================================
+# Review / Repair
+# ============================================================
+
+review:
+  enabled: true
+  refinement_iterations: 3
+
+# ============================================================
+# Logging
+# ============================================================
+
+logging:
+  level: INFO
+  save_prompts: false
+  save_intermediate_state: false

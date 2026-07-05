@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from app.schemas import QualityScore
+from app.schemas import UtilityScore
 from rapidfuzz import fuzz
 import unicodedata
 import math
@@ -46,7 +46,7 @@ class Filter:
     @staticmethod
     def _build_user_profile(intent):
         profile = []
-        prefs = intent.preferences.model_dump()
+        prefs = {pref.category: pref.weight for pref in intent.preferences}
         for k, v in prefs.items():
             if v > 0.3: # Same threshold as _get_top_preferences t - adjustable
                 profile.extend([k] * max(1, int(v * 10)))
@@ -97,7 +97,7 @@ class Filter:
     
     def _score_tags(self, poi, intent) -> float:
         score = 0.0
-        prefs = {k.lower(): v for k, v in intent.preferences.model_dump().items()}
+        prefs = {k.lower(): v for k, v in [(pref.category, pref.weight) for pref in intent.preferences]}
         tag_text = " ".join([poi.category, *poi.tags]).lower()
         for pref, weight in prefs.items():
             if pref in tag_text:
@@ -127,7 +127,7 @@ class Filter:
             for poi, score in zip(pois, scores)
         }
 
-    def score_filter(self, pois, intent) -> list[QualityScore]:
+    def score_filter(self, pois, intent) -> list[UtilityScore]:
         poi_scores = []
         semantic_scores = self._semantic_scores(pois, intent)
         for poi in pois:
@@ -142,8 +142,7 @@ class Filter:
             norm_score_overall = sigmoid(raw_score_overall - 3.0)
 
             poi_scores.append(
-                QualityScore(
-                    id=poi.id,
+                UtilityScore(
                     name_score=score_BT,
                     source_score=score_source,
                     tag_score=score_tags,

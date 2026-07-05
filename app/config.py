@@ -1,9 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-latlon_path = r'' # fill in the path for cities500.txt data
-in_latlon_path = r'' # fill in the path for IN.txt
-FS_cat = r'\data\providers_taxamony\foursquare_categories.json'
-GA_cat = r'\data\providers_taxamony\geoapify_categories.json'
+latlon_path = r'./data/latlon/cities500.txt' # fill in the path for cities500.txt data
+in_latlon_path = r'./data/latlon/IN.txt' # fill in the path for IN.txt
+
+FS_cat = r'./data/providers_taxamony/foursquare_categories.json'
+GA_cat = r'./data/providers_taxamony/geoapify_categories.json'
+
+model = "gemini-2.5-flash-lite"  
+model_thinking = "gemini-2.5-flash"  
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
@@ -18,7 +22,7 @@ class Settings(BaseSettings):
     refinement_iterations: int = 3
 
     model_config = SettingsConfigDict(
-        env_file=r"C:\Users\kuchbhe\Desktop\workspace_1\travelara-cd-v2\.env",
+        env_file=r"./.env",
         case_sensitive=False,
         extra="ignore",
     )
