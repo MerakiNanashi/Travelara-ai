@@ -4,16 +4,6 @@ from typing import Any
 
 
 # ---------- Preference ----------
-class Preference_List(BaseModel):
-    museums: float = 0.0
-    food: float = 0.0
-    nightlife: float = 0.0
-    nature: float = 0.0
-    shopping: float = 0.0
-    arts: float = 0.0
-    history: float = 0.0
-    wellness: float = 0.0
-
 class Preference(BaseModel):
     category: PreferenceCategory 
     name: str = ""
@@ -73,7 +63,6 @@ class StructuredIntent(BaseModel):
     ambiguities: list[str] = Field(default_factory=list)
     clarification_question: ClarificationQuestion = Field(default_factory=ClarificationQuestion)
 
-
 class ConversationContext(BaseModel):
     """Carried by the caller (e.g. the API layer) across clarification
     turns. Deliberately thin — just the raw user statements and the last
@@ -89,4 +78,5 @@ class ExtractionResult(BaseModel):
     missing_required: list[str] | None = None
     clarification_questions: list[ClarificationQuestion] = Field(default_factory=list)
     turn: int = 0
+    missing_required: list[str] | None = None
     context: ConversationContext = Field(default_factory=ConversationContext)

@@ -316,7 +316,7 @@ def _expand_around_anchors(
         if not members:
             continue
 
-        members.sort(key=lambda p: p.anchor_score.overall_anchor, reverse=True)
+        members.sort(key=lambda p: p.planning.anchor.overall, reverse=True)
         anchor = members[0]
         used.add(anchor.id)
         candidates = [anchor]

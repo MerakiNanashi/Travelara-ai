@@ -36,3 +36,11 @@ class PreferenceCategory(str, Enum):
     ARTS = "arts"
     HISTORY = "history"
     WELLNESS = "wellness"
+
+class Stage(str, Enum):
+    INTENT = "intent_extraction"
+    RETRIEVAL = "retrieval"
+    SCORING = "scoring"
+    CLUSTERING = "clustering"
+    ENRICHMENT = "enrichment"
+    ITINERARY = "itinerary"

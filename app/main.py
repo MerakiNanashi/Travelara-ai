@@ -64,8 +64,8 @@ def _print_itinerary(candidate_pool: list[dict]) -> None:
             name     = _display_name(poi)
             category = poi.category
             rating   = f"  ★{poi.rating:.1f}" if poi.rating else ""
-            anchor_score = f"  anchor={poi.anchor_score.overall_anchor:.3f}"
-            utility  = f"  utility={poi.utility_score.raw_score:.2f}" if poi.utility_score else ""
+            anchor_score = f"  anchor={poi.planning.utility.overall:.3f}"
+            utility  = f"  utility={poi.planning.utility.raw:.2f}" if poi.planning.utility.raw is not None else ""
 
             print(f"  {marker} {j+1:>2}. {name:<36} [{category}]{rating}{anchor_score}{utility}")
 
@@ -92,8 +92,8 @@ def candidate_pool_to_itinerary(
     total_pois = 0
 
     start = None
-    if intent.start_date:
-        start = datetime.fromisoformat(intent.start_date)
+    if intent.start_date.value:
+        start = datetime.fromisoformat(intent.start_date.value)
 
     for day_num, cluster in enumerate(candidate_pool, start=1):
 
@@ -154,11 +154,11 @@ def candidate_pool_to_itinerary(
 
             total_pois += 1
 
-            if poi.anchor_score:
-                total_anchor += poi.anchor_score.overall_anchor
+            if poi.planning.anchor:
+                total_anchor += poi.planning.anchor.overall
 
-            if poi.utility_score:
-                total_utility += poi.utility_score.overall_score
+            if poi.planning.utility:
+                total_utility += poi.planning.utility.overall
 
         if start:
             day_date = (

@@ -5,16 +5,17 @@ from pydantic import BaseModel, Field
 
 from app.schemas.request import PlanningRequest
 from app.schemas.intent import StructuredIntent
-from app.schemas.candidate import POI
-from app.schemas.schema import Itinerary
+from app.schemas.candidate import POI, ScoredPOI, ClusteredPOI, PlannedPOI
+from app.schemas.itinerary import Itinerary
+from app.schemas.enums import Stage
 
 
 # ───────────────────── Runtime Metadata ─────────────────────
 class PipelineMetadata(BaseModel):
     run_id: str | None = None
-    current_stage: str = "intent_extraction"
-    completed_stages: list[str] = Field(default_factory=list)
-    failed_stages: list[str] = Field(default_factory=list)
+    current_stage: Stage = Stage.INTENT
+    completed_stages: list[Stage] = Field(default_factory=list)
+    failed_stages: list[Stage] = Field(default_factory=list)
     retries: int = 0
 
 # ───────────────────── Graph / Clustering ─────────────────────
@@ -51,7 +52,10 @@ class PipelineArtifacts(BaseModel):
 class PlanningState(BaseModel):
     request: PlanningRequest
     intent: StructuredIntent | None = None
-    candidates: list[POI] = Field(default_factory=list)
+    raw_pois: list[POI] = Field(default_factory=list)
+    scored_pois: list[ScoredPOI] = Field(default_factory=list)
+    clustered_pois: list[ClusteredPOI] = Field(default_factory=list)
+    planned_pois: list[PlannedPOI] = Field(default_factory=list)
     graph: Any | None = None
     clusters: dict[int, Cluster] = Field(default_factory=dict)
     anchor_ids: list[str] = Field(default_factory=list)

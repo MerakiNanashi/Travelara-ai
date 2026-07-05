@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from app.schemas.schema import Itinerary
+from app.schemas.itinerary import Itinerary
 
 class PlanResponse(BaseModel):
     success: bool

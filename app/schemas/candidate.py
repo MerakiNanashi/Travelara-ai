@@ -1,5 +1,5 @@
 from typing import Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ───────────────────────────── Scoring ───────────────────────────── #
@@ -25,16 +25,6 @@ class AnchorScore(BaseModel):
     overall: float = 0.0
 
 
-class POIPlanningData(BaseModel):
-    utility: UtilityScore = Field(default_factory=UtilityScore)
-    anchor: AnchorScore = Field(default_factory=AnchorScore)
-    cluster_id: int | None = None
-    selected_as_anchor: bool = False
-    selected_for_itinerary: bool = False
-    rank: int | None = None
-    notes: list[str] = Field(default_factory=list)
-
-
 # ───────────────────────────── POI ───────────────────────────── #
 
 class POI(BaseModel):
@@ -54,7 +44,21 @@ class POI(BaseModel):
     wiki_and_media: dict[str, Any] = Field(default_factory=dict)
     wiki_enrichment: str | None = None
     distance_m: float | None = None
-    source: str = "foursquare"
-    
-    # Planner-only fields
-    planning: POIPlanningData = Field(default_factory=POIPlanningData)
+    source: str = ""
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+
+class ScoredPOI(POI):
+    utility: UtilityScore   # required, not optional — guaranteed present
+
+class ClusteredPOI(ScoredPOI):
+    cluster_id: int
+
+class AnchorPOI(ClusteredPOI):
+    anchor: AnchorScore
+    rank: int | None = None
+
+class PlannedPOI(AnchorPOI):
+    selected_as_anchor: bool = False
+    selected_for_itinerary: bool = False
+    notes: list[str] = Field(default_factory=list)
