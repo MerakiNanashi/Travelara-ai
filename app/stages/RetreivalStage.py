@@ -20,10 +20,10 @@ class RetrievalStage(Stage):
     ) -> PlanningState:
 
         request = {
-            "lat": state.anchor.lat,
-            "lon": state.anchor.lon,
+            "lat": state.raw_pois.lat,
+            "lon": state.raw_pois.lon,
             "prefs": state.intent.preferences,
-            "radius_m": state.constraints.radius_m,
+            "radius_m": state.intent.constraints.walking_limit_km,
         }
         
 
@@ -42,6 +42,6 @@ class RetrievalStage(Stage):
 
         pois = deduplicate(pois)
 
-        state.candidate_pois = pois
+        state.raw_pois = pois
 
         return state

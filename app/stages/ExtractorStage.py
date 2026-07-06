@@ -18,13 +18,12 @@ class ExtractorStage(Extractor):
     ) -> PlanningState:
 
         result = await self.extractor(
-            user_message=state.user_message,
-            context=state.conversation_context,
+            user_message=state.request.query,
         )
 
         state.intent = result.intent
-        state.conversation_context = result.context
-        state.ready_for_planning = result.ready
-        state.clarification_questions = result.clarification_questions
+        # state.conversation_context = result.context
+        # state.ready_for_planning = result.ready
+        # state.clarification_questions = result.clarification_questions
 
         return state

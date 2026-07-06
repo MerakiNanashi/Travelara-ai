@@ -6,9 +6,6 @@ Clustering service:
 """
 from __future__ import annotations
 
-import math
-from collections import defaultdict
-
 import hdbscan
 import numpy as np
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.request import PlanningRequest
 from app.schemas.intent import StructuredIntent
-from app.schemas.candidate import POI, ScoredPOI, ClusteredPOI, PlannedPOI
+from app.schemas.candidate import POI, ScoredPOI, ClusteredPOI, PlannedPOI, ClusterSelectionResult
 from app.schemas.itinerary import Itinerary
 from app.schemas.enums import Stage
 
@@ -47,6 +47,7 @@ class PipelineArtifacts(BaseModel):
     distance_matrix: Any | None = None
     scheduler_metadata:  Any | None = None
     reviewer_metadata:  Any | None = None
+    graph: Any | None = None
 
 # ───────────────────── Planning State (Global State) ─────────────────────
 class PlanningState(BaseModel):
@@ -56,8 +57,10 @@ class PlanningState(BaseModel):
     scored_pois: list[ScoredPOI] = Field(default_factory=list)
     clustered_pois: list[ClusteredPOI] = Field(default_factory=list)
     planned_pois: list[PlannedPOI] = Field(default_factory=list)
-    graph: Any | None = None
     clusters: dict[int, Cluster] = Field(default_factory=dict)
+    cluster_selection: ClusterSelectionResult = Field(default_factory=ClusterSelectionResult)
+    candidate_selection: Any | None = None
+    
     anchor_ids: list[str] = Field(default_factory=list)
     itinerary: Itinerary | None = None
     issues: list[PlanningIssue] = Field(default_factory=list)

@@ -1,11 +1,12 @@
 from __future__ import annotations
 import math
-from app.schemas import UtilityScore, StructuredIntent, POI
 from rapidfuzz import fuzz
 import unicodedata
 import math
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+from app.schemas import UtilityScore, StructuredIntent, POI
 
 def sigmoid(x): return 1 / (1 + math.exp(-x))
 
