@@ -13,10 +13,10 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
-from app.clustering.cluster import _normalize, haversine_m
+from app.utils.calcs import normalize, haversine_m
 from app.details.wikidata import enrich_selected_pois
 from app.schemas import POI, StructuredIntent
-
+from app.adapters import poi_adapter
 
 # ---------------------------------------------------------------------------
 # Semantic scorer (BGE-M3, singleton)
@@ -296,9 +296,7 @@ def _expand_around_anchors(
 
     Returns list of: {cluster, anchor, pois}
     """
-    by_cluster: dict[int, list[POI]] = defaultdict(list)
-    for poi in pool_pois:
-        by_cluster[cluster_map[poi.id]].append(poi)
+    by_cluster = poi_adapter.group_by_cluster(pool_pois)
 
     scheduled = sorted(
         selected_clusters,

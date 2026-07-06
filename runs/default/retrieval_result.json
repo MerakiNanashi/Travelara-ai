@@ -1,0 +1,11 @@
+{
+  "provider": "GA",
+  "input": 979,
+  "output": 979,
+  "must_visit": 0,
+  "avoid_removed": 0,
+  "category_counts": {
+    "museums": 487,
+    "food": 492
+  }
+}

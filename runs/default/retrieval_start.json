@@ -1,0 +1,28 @@
+{
+  "provider": "FS",
+  "destination": "Tokyo",
+  "coordinates": [
+    35.6895,
+    139.69171
+  ],
+  "preferences": [
+    {
+      "category": "museums",
+      "name": "",
+      "type": "objective",
+      "weight": 0.8,
+      "priority": 1,
+      "status": "explicit",
+      "evidence": "interested in museums"
+    },
+    {
+      "category": "food",
+      "name": "",
+      "type": "objective",
+      "weight": 0.8,
+      "priority": 1,
+      "status": "explicit",
+      "evidence": "interested in food"
+    }
+  ]
+}

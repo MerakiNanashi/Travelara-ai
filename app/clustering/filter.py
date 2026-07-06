@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from app.schemas import UtilityScore
+from app.schemas import UtilityScore, StructuredIntent, POI
 from rapidfuzz import fuzz
 import unicodedata
 import math
@@ -28,48 +28,57 @@ def normalize_name(name: str) -> str:
     return unicodedata.normalize("NFKC", name).lower().strip()
 
 class Filter:
-    def __init__(self): pass
+    def __init__(self, intent: StructuredIntent, pois: list[POI]):
+        self.intent = intent
+        self.pois = pois
+
+        # Precompute user-derived state
+        self.must_visit = {place.lower()
+            for place in intent.constraints.must_visit
+        }
+
+        self.preference_weights = {pref.category.lower(): pref.weight
+            for pref in intent.preferences
+        }
+
+        self.user_profile = self._build_user_profile()
+
+        # Precompute POI-derived state
+        self.normalized_names = {
+            poi.id: normalize_name(poi.name)
+            for poi in pois
+        }
+
+        self.tag_text = {
+            poi.id: " ".join([poi.category, *poi.tags]).lower()
+            for poi in pois
+        }
+
+        self.poi_profiles = {
+            poi.id: self._build_poi_profile(poi)
+            for poi in pois
+        }
+
+        self.external_link_counts = {
+            poi.id: len(poi.external_links)
+            for poi in pois
+        }
+
+        self.lower_links = {
+            poi.id: [link.lower() for link in poi.external_links]
+            for poi in pois
+        }
 
     @staticmethod
     def _is_same_poi(name1: str, name2: str) -> bool:
-        return fuzz.token_sort_ratio(normalize_name(name1), normalize_name(name2)) >= 90
+        return fuzz.token_sort_ratio(name1, name2) >= 90
 
     @staticmethod
-    def _score_downBT(name: str, intent) -> float:
-        name_lower = name.lower()
-        must_visit = {p.lower() for p in intent.constraints.must_visit}
-        if any(mv in name_lower or name_lower in mv for mv in must_visit): return 1.0
-        for term in BAD_TERMS:
-            if term in name_lower: return 0.0
-        return 1.0
+    def _build_poi_profile(poi: POI) -> str:
+        return " ".join([poi.name, poi.category, *poi.tags])
     
     @staticmethod
-    def _build_user_profile(intent):
-        profile = []
-        prefs = {pref.category: pref.weight for pref in intent.preferences}
-        for k, v in prefs.items():
-            if v > 0.3: # Same threshold as _get_top_preferences t - adjustable
-                profile.extend([k] * max(1, int(v * 10)))
-
-        profile.extend(intent.constraints.must_visit)
-
-        return " ".join(profile)
-
-    @staticmethod
-    def _build_poi_profile(poi):
-        return " ".join([
-            poi.name,
-            poi.category,
-            *poi.tags
-        ])
-
-    def _score_source(self, poi, pois) -> float:
-        for other in pois:
-            if other.id == poi.id: continue
-            if self._is_same_poi(other.name, poi.name): return 1.0
-        return 0.0
-
-    def _score_external(self, poi) -> float:
+    def _score_external(self, poi: POI) -> float:
         """
         Distribution from a sample size of 800+ POIs:
             0 links: 69.53%
@@ -79,11 +88,11 @@ class Filter:
             4 links: 0.62%
         Hence, cutoff at 3, since above 3 only ~1.5% data exists.
         """
-        return math.log1p(len(poi.external_links)) / math.log1p(3)
-
+        return math.log1p(self.external_link_counts[poi.id]) / math.log1p(3)
+    
     def _score_wiki(self, poi) -> float: #untested for now
         score = 0.0
-        for link in poi.external_links:
+        for link in self.lower_links[poi.id]:
             link = link.lower()
             if "wikidata.org" in link:
                 score += 2.0
@@ -95,66 +104,105 @@ class Filter:
                 score += 0.5
         return min(math.log1p(score) / math.log1p(5), 1.0)
     
-    def _score_tags(self, poi, intent) -> float:
+    def _score_downBT(self, name: str) -> float:
+        name_lower = name.lower()
+        if any(mv in name_lower or name_lower in mv for mv in self.must_visit): 
+            return 1.0
+        for term in BAD_TERMS:
+            if term in name_lower: 
+                return 0.0
+        return 1.0
+    
+    def _build_user_profile(self) -> str:
+        profile: list[str] = []
+        for category, weight in self.preference_weights.items():
+            if weight > 0.3:
+                profile.extend([category] * max(1, int(weight * 10)))
+        profile.extend(self.must_visit)
+        return " ".join(profile)
+
+    def _score_source(self, poi: POI) -> float:
+        name = self.normalized_names[poi.id]
+
+        for other in self.pois:
+            if other.id == poi.id:
+                continue
+
+            if self._is_same_poi(
+                name,
+                self.normalized_names[other.id],
+            ):
+                return 1.0
+
+        return 0.0
+    
+    def _score_tags(self, poi: POI) -> float:
         score = 0.0
-        prefs = {k.lower(): v for k, v in [(pref.category, pref.weight) for pref in intent.preferences]}
-        tag_text = " ".join([poi.category, *poi.tags]).lower()
-        for pref, weight in prefs.items():
+        tag_text = self.tag_text[poi.id]
+
+        for pref, weight in self.preference_weights.items():
             if pref in tag_text:
                 score += weight
+
         for tag in poi.tags:
-            tag_lower = tag.lower()
+            tag = tag.lower()
             for tourism_tag, tourism_weight in TOURISM_TAG_WEIGHTS.items():
-                if tourism_tag in tag_lower:
+                if tourism_tag in tag:
                     score += tourism_weight
+
         return min(score, 3.0)
     
-    def _semantic_scores(self, pois, intent):
-        user_profile = self._build_user_profile(intent)
-        poi_profiles = [self._build_poi_profile(poi) for poi in pois]
-
-        corpus = [user_profile] + poi_profiles
-        vectorizer = TfidfVectorizer(
-            lowercase=True,
-            stop_words="english"
+    def _semantic_scores(self) -> list[float]:
+        corpus = [self.user_profile]
+        corpus.extend(
+            self.poi_profiles[poi.id]
+            for poi in self.pois
         )
-        X = vectorizer.fit_transform(corpus)
-        user_vec = X[0]
-        poi_vecs = X[1:]
-        scores = cosine_similarity(user_vec,poi_vecs)[0]
-        return {
-            poi.id: float(score)
-            for poi, score in zip(pois, scores)
-        }
 
-    def score_filter(self, pois, intent) -> list[UtilityScore]:
-        poi_scores = []
-        semantic_scores = self._semantic_scores(pois, intent)
-        for poi in pois:
-            score_BT = self._score_downBT(poi.name, intent)
-            score_source = self._score_source(poi, pois)
+        X = TfidfVectorizer(
+            lowercase=True,
+            stop_words="english",
+        ).fit_transform(corpus)
+
+        return cosine_similarity(
+            X[0],
+            X[1:],
+        )[0].tolist()
+
+    def score_filter(self) -> list[UtilityScore]:
+        semantic_scores = self._semantic_scores()
+        scores: list[UtilityScore] = []
+
+        for poi, semantic_score in zip(self.pois, semantic_scores):
+            score_bt = self._score_downBT(poi.name)
+            score_source = self._score_source(poi)
             score_external = self._score_external(poi)
-            score_tags = self._score_tags(poi, intent)
+            score_tags = self._score_tags(poi)
             score_wiki = self._score_wiki(poi)
-            score_semantic = semantic_scores.get(poi.id, 0.0)
 
-            raw_score_overall = (1.0 * score_BT) + (3.0 * score_source) + (1.5 * score_tags) + (1.0 * score_external) + (3.0 * score_semantic) + (1.5 * score_wiki)
-            norm_score_overall = sigmoid(raw_score_overall - 3.0)
+            raw_score = (
+                score_bt
+                + 3.0 * score_source
+                + 1.5 * score_tags
+                + score_external
+                + 3.0 * semantic_score
+                + 1.5 * score_wiki
+            )
 
-            poi_scores.append(
+            scores.append(
                 UtilityScore(
-                    name_score=score_BT,
+                    name_score=score_bt,
                     source_score=score_source,
                     tag_score=score_tags,
                     external_link_score=score_external,
                     wiki_score=score_wiki,
-                    semantic_score=score_semantic,
-                    overall_score=norm_score_overall,
-                    raw_score=raw_score_overall
+                    semantic_score=semantic_score,
+                    raw_score=raw_score,
+                    overall_score=sigmoid(raw_score - 3.0),
                 )
             )
 
-        return poi_scores
+        return scores
 
 if __name__ == '__main__':
     # Example usage

@@ -13,7 +13,7 @@ import asyncio
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
 
-from app.extractor import extract_intent
+from app.extractor import Extractor
 from app.providers.provider import run_retrieval
 from app.clustering.cluster import select_clusters
 from app.clustering.score import build_candidate_pool
@@ -237,7 +237,8 @@ async def plan_trip(
     if debug:
         print("\n=== STEP 1: Intent Extraction ===")
 
-    result: ExtractionResult = await extract_intent(query)
+    extractor = Extractor(StructuredIntent, False)
+    result: ExtractionResult = await extractor.extractor(query)
     intent: StructuredIntent = result.intent
     if debug:
         print(f"Destination : {intent.destination.value}")
@@ -312,7 +313,7 @@ async def plan_trip(
     )
 
     # ── 5. Print itinerary ────────────────────────────────────────────────
-    _print_itinerary(candidate_pool)
+    # _print_itinerary(candidate_pool)
 
     itinerary = candidate_pool_to_itinerary(candidate_pool, intent)
 

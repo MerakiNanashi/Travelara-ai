@@ -1,5 +1,5 @@
-from app.extractor.extractor import extract_intent
+from app.extractor.extractor import Extractor
 
 __init__ = [
-    extract_intent
+    Extractor
 ]

@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from app.schemas import POI
 from app.config import settings, GA_cat
-from app.providers.provider_class import BaseProvider, make_poi_id
+from app.providers.provider_class import BaseProvider
+from app.providers.internals import make_poi_id
 
 # Geoapify categories → preference keys
 with open(GA_cat, 'r', encoding='utf-8') as f:
@@ -41,37 +42,57 @@ class GeoapifyProvider(BaseProvider):
         pois = []
 
         for common_category, payload in results.items():
-
             for feat in payload.get("features", []):
                 try:
                     props = feat.get("properties", {})
-                    geom = feat.get("geometry", {})
-                    coords = geom.get("coordinates", [0, 0])
+                    raw = props.get("datasource", {}).get("raw", {})
+                    coords = feat.get("geometry", {}).get("coordinates", [0, 0])
 
+                    # Required
+                    poi_id = make_poi_id("GA", str(props.get("place_id", "")))
                     name = str(props.get("name", "")).strip()
 
                     if not name:
                         continue
 
+                    lat = coords[1]
+                    lon = coords[0]
+
+                    # Optional
+                    tags = props.get("categories", [])[:5]
+                    popularity = min(raw.get("popularity", 0.5), 1.0)
+                    rating = raw.get("rating", 3.5)
+                    opening_hours = props.get("opening_hours", {})
+                    address = props.get("formatted", "")
+                    pincode = props.get("postcode", "")
+                    distance = props.get("distance")
+                    wiki = props.get("wiki_and_media", {})
+
+                    external_links = [
+                        link
+                        for link in (
+                            props.get("website"),
+                            props.get("datasource", {}).get("source_ref"),
+                        )
+                        if link and str(link).strip()
+                    ]
+
                     pois.append(
-                                POI(
-                                    id=make_poi_id("GA", str(props.get("place_id", name))),
+                                self.create_poi(
+                                    id=poi_id,
                                     name=name,
-                                    lat=coords[1],
-                                    lon=coords[0],
+                                    lat=lat,
+                                    lon=lon,
                                     category=common_category,
-                                    tags=props.get("categories", [])[:5],
-                                    popularity_score=min(props.get("datasource", {}).get("raw", {}).get("popularity", 0.5), 1.0 ), # same as rating
-                                    opening_hours=props.get("opening_hours", {}),
-                                    external_links = [v for v in [
-                                                props.get("website"),
-                                                props.get("datasource").get("source_ref"), ] if v and str(v).strip()],
-                                    rating=props.get("datasource", {}).get("raw", {}).get("rating", 3.5), # always default since doesn't exist most often
-                                    address=props.get("formatted", ""),
-                                    pincode=props.get("postcode", ""),
-                                    wiki_and_media=props.get("wiki_and_media", {}),
-                                    distance=props.get("distance"),
-                                    source="geoapify",
+                                    tags=tags,
+                                    popularity_score=popularity,
+                                    rating=rating,
+                                    opening_hours=opening_hours,
+                                    address=address,
+                                    pincode=pincode,
+                                    external_links=external_links,
+                                    wiki_and_media=wiki,
+                                    distance_m=distance
                                 )
                             )
                 except Exception as e:

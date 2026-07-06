@@ -1,6 +1,6 @@
 from typing import Any
 from pydantic import BaseModel, Field, ConfigDict
-
+from dataclasses import dataclass
 
 # ───────────────────────────── Scoring ───────────────────────────── #
 
@@ -48,6 +48,15 @@ class POI(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
+    @property
+    def get_coordinates(self) -> tuple[float, float]:
+        return self.lat, self.lon
+
+    @property
+    def normalized_name(self) -> str:
+        return self.name.casefold().strip()
+
+
 class ScoredPOI(POI):
     utility: UtilityScore   # required, not optional — guaranteed present
 
@@ -62,3 +71,28 @@ class PlannedPOI(AnchorPOI):
     selected_as_anchor: bool = False
     selected_for_itinerary: bool = False
     notes: list[str] = Field(default_factory=list)
+
+@dataclass
+class ClusterScore:
+    cluster_id: int
+    sum_score: float
+    max_score: float
+    p90_score: float
+    density: float
+    diversity: float
+    survival_score: float
+    protected: bool
+
+@dataclass
+class ClusteringConfig:
+    min_cluster_size: int = 5
+    min_samples: int = 2
+    diversity_weight: float = 0.15
+    pruning_percentile: float = 60
+    protected_top_n: int = 50
+
+class ClusterSelectionResult(BaseModel):
+    selected_pois: list[ScoredPOI]
+    selected_clusters: list[ClusterScore]
+    cluster_map: dict[str, int]
+    threshold: float

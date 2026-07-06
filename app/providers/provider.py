@@ -1,70 +1,12 @@
 from __future__ import annotations
-from rapidfuzz import fuzz
-import csv
-from pathlib import Path
 
-from app.schemas import POI, StructuredIntent
+from app.schemas import StructuredIntent
 from app.config import latlon_path, in_latlon_path
 from app.providers.foursquare_provider import FoursquareProvider
 from app.providers.geoapify_provider import GeoapifyProvider
-
-def parse_geocode_file(filepath: str):
-    cleaned = []
-
-    with open(filepath, encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter="\t")
-
-        for row in reader:
-            try:
-                cleaned.append(
-                    {
-                        "name": str(row[1]).strip().lower(),
-                        "lat": float(row[4]),
-                        "lon": float(row[5]),
-                        "population": int(row[14]) if row[14] else 0,
-                    }
-                )
-            except Exception:
-                print("parse_geocode_file failed")
-                continue
-
-    return cleaned
-
-
-def retrieve_latlon(
-    destination: str,
-    geonames_file: Path,
-) -> tuple[float, float]:
-
-    data = parse_geocode_file(geonames_file)
-
-    matches = []
-
-    for row in data:
-        score = fuzz.partial_ratio(
-            destination.lower(),
-            row["name"]
-        )
-
-        if score >= 70:
-            matches.append((score, row))
-
-    if not matches:
-        raise ValueError(
-            f"Could not resolve destination: {destination}"
-        )
-
-    matches.sort(
-        key=lambda x: (
-            x[0],
-            x[1]["population"]
-        ),
-        reverse=True,
-    )
-
-    best = matches[0][1]
-
-    return best["lat"], best["lon"]
+from app.providers.internals import retrieve_latlon
+from app.utils.snapshot import debugger
+from app.adapters import intent_adapter
 
 PROVIDERS = {
     "GA": GeoapifyProvider(),
@@ -72,109 +14,92 @@ PROVIDERS = {
 }
 
 
-def _deduplicate(pois: list[POI],
-                 threshold_m: float = 100.0,
-                 debug: bool = False) -> list[POI]:
-
-    seen_names = set()
-    result = []
-    dropped = {}
-
-    for poi in pois:
-
-        norm_name = str(poi.name).lower().strip()
-
-        if norm_name in seen_names:
-            dropped[poi.category] = dropped.get(poi.category, 0) + 1
-            continue
-
-        seen_names.add(norm_name)
-        result.append(poi)
-
-    if debug:
-        print("\n=== DEDUPLICATION ===")
-        print(f"Input POIs: {len(pois)}")
-        print(f"Output POIs: {len(result)}")
-        print(f"Dropped: {sum(dropped.values())}")
-        print(f"By Category: {dropped}")
-
-    return result
-
-
-
-# Main orchestrator for retrieval
-async def run_retrieval(source,
-                        intent: StructuredIntent,
-                        debug: bool = False):
+async def run_retrieval(
+    source: str,
+    intent: StructuredIntent,
+    debug: bool = False,
+):
+    # Read(Intent)
+    must_visit = intent_adapter.must_visit_names(intent)
+    is_international = intent_adapter.is_international(intent)
+    destination = intent_adapter.destination(intent)
+    prefs = intent.preferences
+    walking_limit = int(intent_adapter.walking_limit_km(intent))
+    must_avoid = set(intent_adapter.avoid_categories(intent))
 
     lat, lon = retrieve_latlon(
-        intent.destination.value,
-        latlon_path if intent.is_international.value else in_latlon_path
+        destination,
+        latlon_path if is_international else in_latlon_path,
     )
 
-    if debug:
-        print("\n=== RETRIEVAL START ===")
-        print(f"Provider: {source}")
-        print(f"Destination: {intent.destination.value}")
-        print(f"Coordinates: ({lat}, {lon})")
-        print(f"Preferences : {[p.model_dump() for p in intent.preferences]}")
+    debugger.report("retrieval_start", {
+        "provider": source,
+        "destination": destination,
+        "coordinates": (lat, lon),
+        "preferences": [p.model_dump() for p in prefs],
+    })
 
-    radius_m = int(intent.constraints.walking_limit_km or 10) * 1500
+    radius_m = int(walking_limit or 10) * 1500
 
     try:
-
-        raw_pois = await PROVIDERS[source].retrieve(
+        pois = await PROVIDERS[source].retrieve(
             lat=lat,
             lon=lon,
-            prefs=intent.preferences,
+            prefs=prefs,
             radius_m=radius_m,
-            debug=debug
+            debug=debug,
         )
 
     except Exception as e:
+        debugger.report("retrieval_error", {
+            "provider": source,
+            "error": str(e),
+        })
+        pois = []
 
-        print(f"{source} Retrieval error: {e}")
-        raw_pois = []
+    must_names = {m.lower() for m in must_visit}
 
-    pois = _deduplicate(raw_pois, debug=debug)
+    must_pois = [
+        poi
+        for poi in pois
+        if any(name in poi.normalized_name for name in must_names)
+    ]
 
-    if debug:
-        counts = {}
-        for poi in pois:
-            counts[poi.category] = counts.get(poi.category, 0) + 1
+    rest = [poi for poi in pois if poi not in must_pois]
 
-        print("\n=== AFTER DEDUP ===")
-        print(f"Total POIs: {len(pois)}")
-        print(counts)
+    debugger.report("must_visit_filter", {
+        "targets": must_visit,
+        "matched": len(must_pois),
+    })
 
-    must_names = {m.lower() for m in intent.constraints.must_visit}
-    must_pois = [p for p in pois if any(m in p.name.lower() for m in must_names)]
-    rest = [p for p in pois if p not in must_pois]
+    avoid_categories = {
+        category.lower()
+        for category in must_avoid
+    }
 
-    if debug:
-        print("\n=== MUST VISIT FILTER ===")
-        print(f"Must Visit Targets: {intent.constraints.must_visit}")
-        print(f"Matched POIs: {len(must_pois)}")
+    before = len(rest)
 
-    avoid_cats = {a.lower() for a in intent.constraints.avoid}
-    rest = [p for p in rest if p.category.lower() not in avoid_cats]
-    before_avoid = len(rest)
+    rest = [
+        poi
+        for poi in rest
+        # Direct Call - POI.Category
+        if poi.category.lower() not in avoid_categories
+    ]
+
     final_pois = must_pois + rest
 
-    if debug:
-        print("\n=== AVOID FILTER ===")
-        print(f"Avoid Categories: {avoid_cats}")
-        print(f"Removed: {before_avoid - len(rest)}")
-        counts = {}
+    counts: dict[str, int] = {}
+    for poi in final_pois:
+        # Direct Call - POI.Category
+        counts[poi.category] = counts.get(poi.category, 0) + 1
 
-        for poi in final_pois:
-            counts[poi.category] = counts.get(poi.category, 0 ) + 1
-
-        print("\n=== FINAL RESULT ===")
-        print(f"Total POIs: {len(final_pois)}")
-        print(f"Must Visit POIs: {len(must_pois)}")
-        print(f"Regular POIs: {len(rest)}")
-        print(counts)
-        print("======================\n")
+    debugger.report("retrieval_result", {
+        "provider": source,
+        "input": len(pois),
+        "output": len(final_pois),
+        "must_visit": len(must_pois),
+        "avoid_removed": before - len(rest),
+        "category_counts": counts,
+    })
 
     return final_pois, lat, lon
