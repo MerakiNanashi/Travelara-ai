@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     config_path: Path = BASE_DIR / "shared" / "config" / "config.yaml"
     root_dir: Path = ROOT_DIR
     base_dir: Path = BASE_DIR
-    save_dir: Path = BASE_DIR / "data"
+    save_dir: Path = ROOT_DIR / "data"
 
     model_config = SettingsConfigDict(
         env_file=ROOT_DIR / ".env",
@@ -56,4 +56,4 @@ def get_config(config_path: Path) -> dict:
     with config_path.open("r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    return _resolve_paths(config, settings.base_dir)
+    return _resolve_paths(config, settings.root_dir)

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from src.shared.schemas import POI
-from src.retreival.provider_class import BaseProvider
-from src.retreival.internals import make_poi_id
+from src.retrieval.provider_class import BaseProvider
+from src.retrieval.internals import make_poi_id
 
 class FoursquareProvider(BaseProvider):
 

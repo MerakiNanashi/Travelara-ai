@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from src.shared.schemas import StructuredIntent, _ProviderConfig
-from src.retreival.foursquare_provider import FoursquareProvider
-from src.retreival.geoapify_provider import GeoapifyProvider
-from src.retreival.internals import retrieve_latlon
+from src.retrieval.foursquare_provider import FoursquareProvider
+from src.retrieval.geoapify_provider import GeoapifyProvider
+from src.retrieval.internals import retrieve_latlon
 
 from src.shared.adapters import intent_adapter
 

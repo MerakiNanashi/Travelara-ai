@@ -232,5 +232,7 @@ ISSUES.md
 /docs/*
 /docs/
 
-/src/data/latlon/
-/src/data/latlon/*
+/data/latlon/
+/data/latlon/*
+/data/runs/*
+/data/runs/

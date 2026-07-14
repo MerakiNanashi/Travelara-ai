@@ -12,7 +12,7 @@ import httpx
 import json
 # From Candidate:POI, Intent:Preference
 from src.shared.schemas import POI, Preference,_ProviderConfig
-from src.retreival.internals import get_categorymap, preferences_to_legacy
+from src.retrieval.internals import get_categorymap, preferences_to_legacy
 
 
 class BaseProvider(ABC):

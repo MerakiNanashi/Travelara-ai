@@ -4,9 +4,9 @@ import asyncio
 
 from src.shared.schemas import PlanningState, Stage, StageContext
 from .BaseStage import BaseStage
-from src.retreival import get_params, build_providers, deduplicate
+from src.retrieval import get_params, build_providers, deduplicate
 
-class RetreivalStage(BaseStage):
+class RetrievalStage(BaseStage):
 
     def __init__(self, context: StageContext):
         super().__init__(
@@ -16,7 +16,6 @@ class RetreivalStage(BaseStage):
         self.debugger = context.debugger
         self.settings = context.settings
         self.config = context.config['stage2']
-        self.provider_config = context.config['stage2']['providers']
        
 
     async def run(self,
