@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.main import *
-from app.config import settings
+from src.orchestrator import *
+from src.shared.config import Settings
 
 app = FastAPI(
     title="Travelara",
@@ -34,6 +34,7 @@ async def root():
 
 @app.get("/health", tags=["Health"])
 async def health():
+    settings = Settings()
     return {
         "status": "ok",
         "apis_configured": {

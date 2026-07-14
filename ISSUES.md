@@ -38,44 +38,6 @@ High - 15
 
 ---
 
-## Issue: No Extraction Confidence Estimation
-
-**Description**
-
-Every extracted intent is treated as equally reliable. The system has no notion of uncertainty and therefore cannot distinguish between high-confidence and speculative extractions.
-
-This prevents adaptive workflows such as clarification questions or fallback retrieval strategies.
-
-**Related File**
-
-* `extractor.py`
-
-**Priority**
-
-Low - 
-
-**Proposed Solution**
-
-Introduce confidence estimation for each extracted field.
-
-Example:
-
-```
-destination: 0.98
-budget: 0.81
-preferences: 0.74
-walking_limit: 0.45
-```
-
-If confidence falls below a threshold:
-
-* ask clarification questions
-* request confirmation
-* perform multiple extraction samples
-* aggregate results
-
----
-
 ## Issue: Ambiguous User Queries Are Forced Into One Interpretation
 
 **Description**

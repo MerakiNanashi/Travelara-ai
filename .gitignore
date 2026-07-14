@@ -218,63 +218,19 @@ __marimo__/
 .streamlit/secrets.toml
 
 
-# data dir
+# daa dir
+Notes.md
+tree.py
 
-/output/*
-/backend/tests/sequential_planner/data/fallback_latlon/*
-/backend/tests/sequential_planner/data/latlon_index/*
-/backend/tests/diagrams/*
-
-/backend/tests/hierarchial_planner/data/*
-/backend/tests/hierarchial_planner/data/fallback_latlon/*
-/backend/tests/hierarchial_planner/data/latlon_index/*
-/backend/tests/hierarchial_planner/results/*
-/backend/tests/hierarchial_planner/model/*
-
-/backend/tests/assets/diagrams/*
-/backend/tests/hierarchial_planner/docs/idea_1.md
-/backend/tests/hierarchial_planner/docs/idea_2.md
-/backend/tests/hierarchial_planner/destination/details.py
-/backend/tests/hierarchial_planner/destination/temp_geolocation.py
-/backend/tests/hierarchial_planner/destination/wiki_auth.py
-/backend/tests/hierarchial_planner/destination/wiki_projects.py
-
-
-/backend/experiments/tests/
-/backend/app/model/
-/backend/app/results/
-/backend/app/data/
-/backend/app/config/config.yaml
-/backend/app/config/config.py
-/backend/app/core/utils/retry_1.py
-
-/backend/app/domain/travel/
-/backend/app/domain/
-/backend/app/domain/.gitignore
-/backend/app/domain/README.md
-/backend/note.md
-
-
-/data/latlon/*
-/data/latlon/
-/data/generated_itineraries/
-/data/generated_itineraries/*
-/app/path.txt
-/app/old/*
-/app/old/
-/app/old/Extractor_1.py
-/app/old/Extractor_old.py
-
-
-/experiments/RawResult/*
-/experiments/RawResult/
-/experiments/runs/
-/experiments/runs/*
-
-/docs/*
-/docs/
-/RawResult/*
-/RawResult/
+ISSUES.md
+/old/*
+/old/
 
 /experiments/*
 /experiments/
+
+/docs/*
+/docs/
+
+/src/data/latlon/
+/src/data/latlon/*

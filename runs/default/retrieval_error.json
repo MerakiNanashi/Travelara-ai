@@ -1,4 +1,0 @@
-{
-  "provider": "FS",
-  "error": "app.schemas.candidate.POI() got multiple values for keyword argument 'source'"
-}

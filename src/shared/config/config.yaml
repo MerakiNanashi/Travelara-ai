@@ -1,0 +1,85 @@
+stage1:
+  prompt_version: "0.1.0"
+  temperature: 0.1
+  max_turns: 3
+  active_model: gemini-3.1-flash-lite
+  fallback_model: gemini-2.5-flash-lite
+  url: https://generativelanguage.googleapis.com/v1beta/interactions
+  timeout: 120.0
+  thinking_level: "minimal"
+
+stage2:
+  long_resolve:
+    - gl_path: /data/latlon/cities500.txt
+    - dom_path: /data/latlon/IN.txt
+  providers:
+    - source: FS
+      url: https://places-api.foursquare.com/places/search
+      taxonomy_path: /data/providers_taxamony/foursquare_categories.json
+      limit: 49
+
+    - source: GA
+      url: https://api.geoapify.com/v2/places
+      taxonomy_path: /data/providers_taxamony/geoapify_categories.json
+      limit: 499
+
+stage3:
+  clustering:
+    min_cluster_size: 5
+    min_samples: 2
+
+stage4:
+  pruning:
+      diversity_weight: 0.15
+      pruning_percentile: 60
+      protected_top_n: 50
+
+stage5:
+  wikidata:
+    api_url: https://www.wikidata.org/w/api.php
+    batch_size: 50
+    language: en
+    maxlag: 5
+
+  wikipedia:
+    timeout: 30
+    max_concurrency: 5
+    follow_redirects: true
+    prefer_language: en
+
+  fallback:
+    use_wikidata_description: true
+    generate_metadata_description: true
+    use_poi_name: true
+
+stage6:
+  reranking:
+    semantic:
+      model: BAAI/bge-m3
+      batch_size: 128
+      normalize_embeddings: true
+
+    anchor:
+      sigma_m: 500
+      neighbor_radius_m: 400
+
+stage7:
+  candidate_selection:
+    target_per_day: 6
+    expansion_radius_m: 750
+    diversity_weight: 0.35
+    distance_decay_m: 500
+
+stage8:
+  itinerary:
+    day:
+      start_time: "09:00"
+      default_visit_duration_minutes: 90
+      default_travel_time_minutes: 12
+      minimum_travel_time_minutes: 5
+      walking_speed_kmph: 4.8
+
+    scoring:
+      spatial_efficiency: 0.82
+      temporal_feasibility: 1.00
+      diversity: 0.75
