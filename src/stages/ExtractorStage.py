@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from src.shared.schemas import StructuredIntent, PlanningState, Stage
+from src.shared.schemas import StructuredIntent, PlanningState, Stage, StageContext
 from .BaseStage import BaseStage
 from src.extractor import Extractor
 
 # state should be copied, updated and returned instead of in place updation
 class ExtractorStage(BaseStage):
     
-    def __init__(self, context):
+    def __init__(self, context: StageContext):
         super().__init__(
             context=context
         )

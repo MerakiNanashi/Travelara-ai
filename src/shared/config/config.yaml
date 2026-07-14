@@ -10,17 +10,17 @@ stage1:
 
 stage2:
   long_resolve:
-    - gl_path: /data/latlon/cities500.txt
-    - dom_path: /data/latlon/IN.txt
+    gl_path: data/latlon/cities500.txt
+    dom_path: data/latlon/IN.txt
   providers:
     - source: FS
       url: https://places-api.foursquare.com/places/search
-      taxonomy_path: /data/providers_taxamony/foursquare_categories.json
+      taxonomy_path: data/providers_taxamony/foursquare_categories.json
       limit: 49
 
     - source: GA
       url: https://api.geoapify.com/v2/places
-      taxonomy_path: /data/providers_taxamony/geoapify_categories.json
+      taxonomy_path: data/providers_taxamony/geoapify_categories.json
       limit: 499
 
 stage3:

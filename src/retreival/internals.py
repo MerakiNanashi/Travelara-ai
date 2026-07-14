@@ -5,7 +5,7 @@ from pathlib import Path
 import h3
 
 from src.shared.schemas import POI, Preference, PreferenceType
-from src.shared.utils.snapshot import debugger
+
 
 def make_poi_id(source, id):
     return f"{source}_{id}"
@@ -110,14 +110,6 @@ def deduplicate(
         buckets.setdefault(cell, []).append(poi)
         kept.append(poi)
 
-    # Debugger - report
-    debugger.report("dedup", {
-        "input": len(pois),
-        "output": len(kept),
-        "dropped": sum(dropped_by_category.values()),
-        "dropped_by_category": dropped_by_category,
-        "h3_resolution": resolution,
-    })
     return kept
 
 # Input: filepath, Output: list of dicts with keys: name, lat, lon, population

@@ -53,6 +53,7 @@ class PlanningState(BaseModel):
     intent: StructuredIntent | None = None
 
     raw_pois: list[POI] = Field(default_factory=list)
+    discarded_dups: list[POI] = Field(default_factory=list)
     scored_pois: list[POI] = Field(default_factory=list)
     clustered_pois: list[POI] = Field(default_factory=list)
     selected_pois: list[POI] = Field(default_factory=list)

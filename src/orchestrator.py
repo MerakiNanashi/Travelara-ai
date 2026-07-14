@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from pathlib import Path
 
 from src.shared.config import get_config, Settings
 from src.shared.utils import create_run_id, Debugger
@@ -12,6 +13,7 @@ from src.shared.schemas import (
     StageContext
 )
 from src.stages.ExtractorStage import ExtractorStage
+from src.stages.RetreivalStage import RetreivalStage
 
 router = APIRouter(prefix="/plan", tags=["Planning"])
 
@@ -27,7 +29,8 @@ async def plan_trip(request: PlanningRequest,
     run_id = create_run_id()
     metadata = PipelineMetadata(run_id=run_id)
 
-    debugger = Debugger(run_id=run_id, dir=settings.save_dir, enabled=True)
+    debug_dir: Path = settings.save_dir / "runs" / f"{run_id}"
+    debugger = Debugger(run_id=run_id, dir=debug_dir, enabled=True)
 
     # Intialize state
     state = PlanningState(request=request,
@@ -40,12 +43,7 @@ async def plan_trip(request: PlanningRequest,
     )
     pipeline = [
         ExtractorStage(context=context),
-        # RetrievalStage(
-        #     providers=[
-        #         GeoapifyProvider(),
-        #         FoursquareProvider(),
-        #     ],
-        # ),
+        RetreivalStage(context=context),
         # ClusteringStage(),
         # CandidateStage(),
         # PlanStage(),
