@@ -27,11 +27,12 @@ class _PruningConfig:
 class _WikipediaConfig:
     user_agent: str = "Travelara/0.1"
     accept: str = "application/json"
+    api_url: str = "https://www.wikidata.org/w/api.php"
     timeout: int = 30
     concurrency: int = 10
     rate_limit: tuple[int, int] = (200, 60)
     follow_redirects: bool = True
-    lang: str = "en"
+    language: str = "en"
     maxlag: int = 5
     batch_size: int = 50
 

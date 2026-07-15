@@ -41,17 +41,14 @@ stage3:
       protected_top_n: 50
 
 stage4:
-  wikidata:
+  wiki:
     api_url: https://www.wikidata.org/w/api.php
     batch_size: 50
     language: en
     maxlag: 5
-
-  wikipedia:
     timeout: 30
-    max_concurrency: 5
+    concurrency: 5
     follow_redirects: true
-    prefer_language: en
 
   fallback:
     use_wikidata_description: true

@@ -7,7 +7,7 @@ from .itinerary import Itinerary, DayPlan, ItineraryStop, ItineraryScore, Itiner
 from .request import PlanningRequest
 from .response import PlanResponse
 from .debugger import StageReport
-from .stage import StageContext
+from .stage import StageContext, WikiEntity
 
 __init__ = [
     PlanningState,
@@ -38,6 +38,7 @@ __init__ = [
     StageReport,
     ClusterScore,
     StageContext,
+    WikiEntity,
     _ClusteringConfig,
     _WikipediaConfig,
     _PruningConfig,

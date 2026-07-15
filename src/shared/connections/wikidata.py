@@ -36,7 +36,7 @@ async def batch_wikidata(*,
                     "format": "json",
                     "ids": "|".join(batch),
                     "props": "labels|descriptions|sitelinks",
-                    "languages": config.lang,
+                    "languages": config.language,
                     "maxlag": config.maxlag,
                 },
             )

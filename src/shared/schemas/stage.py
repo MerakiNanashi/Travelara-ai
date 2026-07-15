@@ -22,3 +22,11 @@ class StageContext:
     config: Any
     debugger: Any
     settings: Any
+
+@dataclass(slots=True)
+class WikiEntity:
+    label: str | None = None
+    description: str | None = None
+    lang: str | None = None
+    title: str | None = None
+
