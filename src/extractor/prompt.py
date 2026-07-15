@@ -27,7 +27,7 @@ FIELD DEFINITIONS:
 PREFERENCES:
 - One Preference item per distinct interest, activity, or travel style expressed.
 - category must be exactly one of: museums, food, nightlife, nature, shopping, arts, history, wellness. If nothing fits, omit the preference — never invent a category.
-- weight (0-1) and priority (1-5) scale with how strongly and explicitly the user expressed it.
+- weight (0-1) and priority (1-5) scale with how strongly and explicitly the user expressed it. Consider whether the preference is explicit or implied, how central it is to the user's request, and any consistent preferences established earlier in the conversation.
 
 CONSTRAINTS:
 - Include walking_limit_km, budget_per_day_usd, must_visit, avoid only if explicitly stated.

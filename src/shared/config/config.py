@@ -24,9 +24,6 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
-
-
 _PATH_KEYS = {
     "path",
     "gl_path",
@@ -51,7 +48,7 @@ def _resolve_paths(obj, root: Path):
 
     return obj
 
-
+settings = Settings()
 def get_config(config_path: Path) -> dict:
     with config_path.open("r", encoding="utf-8") as f:
         config = yaml.safe_load(f)

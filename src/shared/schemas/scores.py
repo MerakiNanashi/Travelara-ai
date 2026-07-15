@@ -30,7 +30,7 @@ class ClusterScore:
     sum_score: float
     max_score: float
     p90_score: float
-    density: float
+    score_avg: float
     diversity: float
     survival_score: float
     protected: bool

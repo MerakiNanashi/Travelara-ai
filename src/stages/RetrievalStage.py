@@ -52,7 +52,14 @@ class RetrievalStage(BaseStage):
             state.raw_pois = dedup_pois
             state.discarded_dups = discarded_dups
 
-            self.debugger.report(Stage.RETRIEVAL, state.model_dump())
+            self.debugger.report(
+                Stage.RETRIEVAL,
+                {
+                    "raw_pois": len(state.raw_pois),
+                    "discarded_dups": len(state.discarded_dups),
+                    "sample_pois": [p.name for p in state.raw_pois[:5]],
+                },
+            )
             self.debugger.save_stage(Stage.RETRIEVAL, 2, state)
 
             return state

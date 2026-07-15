@@ -43,6 +43,7 @@ class Stage(str, Enum):
     INTENT = "intent_extraction"
     RETRIEVAL = "retrieval"
     SCORING = "scoring"
+    PRUNING = "pruning"
     CLUSTERING = "clustering"
     ENRICHMENT = "enrichment"
     ITINERARY = "itinerary"

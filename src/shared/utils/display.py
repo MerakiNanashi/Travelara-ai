@@ -1,4 +1,6 @@
-from app.schemas import AnchorPOI
+from __future__ import annotations
+
+from src.shared.schemas import AnchorPOI
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------

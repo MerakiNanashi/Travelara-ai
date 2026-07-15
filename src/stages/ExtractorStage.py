@@ -27,13 +27,13 @@ class ExtractorStage(BaseStage):
         extractor = Extractor(config=self.config,
                               api_key=self.api_key,
                               schema=self.schema)
-        result = await extractor.extract_intent(
+        raw_res, result = await extractor.extract_intent(
             user_query=state.request.query,
         )
 
         state.intent = result
 
-        self.debugger.report(Stage.INTENT, state.model_dump())
+        self.debugger.report('raw_res', raw_res)
         self.debugger.save_stage(Stage.INTENT, 1, state)
  
         return state

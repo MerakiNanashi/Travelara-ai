@@ -3,14 +3,11 @@ from __future__ import annotations
 import json
 from pydantic import BaseModel
 from abc import ABC
+from typing import Any
 
 from src.shared.schemas import (
-    IntentStatus,
     StructuredIntent,
     _ExtractorConfig,
-    FieldState,
-    Preference,
-    Constraints
 )
 from src.shared.connections.gemini import single_call_gemini
 from .prompt import build_prompt
@@ -65,43 +62,8 @@ class Extractor(ABC):
             raise
 
         return data
-    
-    def _parse_field(self, field_name: str, raw: dict) -> FieldState:
-        try:
-            status = IntentStatus(raw.get("status")) or IntentStatus.UNKNOWN
-            value = raw.get("value")
-            evidence = raw.get("evidence") if isinstance(raw.get("evidence"), str) else ""
 
-            if value is None or status == IntentStatus.UNKNOWN:
-                return FieldState(value=None, status=status, evidence=evidence)
-            
-            return FieldState(value=value, status=status, evidence=evidence)
-        except:
-            raise
-
-    def _parse_res(self, data: dict) -> StructuredIntent:
-        fields = {}
-
-        for name in self.schema.model_fields:
-            if name in self.non_field_fields:
-                continue
-
-            fields[name] = self._parse_field(name, data.get(name))
-
-        return StructuredIntent(
-            **fields,
-            preferences=[
-                Preference.model_validate(p)
-                for p in data.get("preferences", [])
-            ],
-            constraints=Constraints.model_validate(
-                data.get("constraints", {})
-            ),
-            ready_for_planning=data.get("ready_for_planning"),
-        )
-
-
-    async def extract_intent(self, user_query: str) -> StructuredIntent:
+    async def extract_intent(self, user_query: str) -> tuple[dict[str, Any], StructuredIntent]:
         try:
             prompt = build_prompt(user_query=user_query)
             res_dict = await single_call_gemini(
@@ -116,10 +78,9 @@ class Extractor(ABC):
             
             res_str = self._extract_text(res_dict)
             res = self._load_json(res_str)
-            StructuredIntent.model_validate(res)
+            intent = self.schema.model_validate(res)
 
-            parsed_res = self._parse_res(res)
-            return parsed_res
+            return res_dict, intent
         
         except Exception as e:
             raise

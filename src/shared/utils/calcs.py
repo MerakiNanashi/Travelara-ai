@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import math
 from collections import defaultdict
-from app.schemas import POI
+from src.shared.schemas import POI
 
 # ---------------------------------------------------------------------------
 # Haversine distance utilities
@@ -21,6 +23,8 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return haversine_m(lat1, lon1, lat2, lon2) / 1000.0
 
+def sigmoid(x): 
+    return 1 / (1 + math.exp(-x))
 # ---------------------------------------------------------------------------
 # Normalization helper
 # ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ from src.shared.schemas import (
 )
 from src.stages.ExtractorStage import ExtractorStage
 from src.stages.RetrievalStage import RetrievalStage
+from src.stages.PruningStage import PruningStage
 
 router = APIRouter(prefix="/plan", tags=["Planning"])
 
@@ -44,7 +45,7 @@ async def plan_trip(request: PlanningRequest,
     pipeline = [
         ExtractorStage(context=context),
         RetrievalStage(context=context),
-        # ClusteringStage(),
+        PruningStage(context=context),
         # CandidateStage(),
         # PlanStage(),
     ]

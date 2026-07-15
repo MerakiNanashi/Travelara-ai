@@ -27,14 +27,20 @@ stage3:
   clustering:
     min_cluster_size: 5
     min_samples: 2
-
-stage4:
+  filter:
+    name_weight: 1.0
+    source_weight: 3.0
+    tag_weight: 1.5
+    semantic_weight: 3.0
+    wiki_weight: 1.5
+    link_weight: 1.5
+    sigmoid_offset: 1
   pruning:
       diversity_weight: 0.15
       pruning_percentile: 60
       protected_top_n: 50
 
-stage5:
+stage4:
   wikidata:
     api_url: https://www.wikidata.org/w/api.php
     batch_size: 50
@@ -52,7 +58,7 @@ stage5:
     generate_metadata_description: true
     use_poi_name: true
 
-stage6:
+stage5:
   reranking:
     semantic:
       model: BAAI/bge-m3
@@ -63,14 +69,14 @@ stage6:
       sigma_m: 500
       neighbor_radius_m: 400
 
-stage7:
+stage6:
   candidate_selection:
     target_per_day: 6
     expansion_radius_m: 750
     diversity_weight: 0.35
     distance_decay_m: 500
 
-stage8:
+stage7:
   itinerary:
     day:
       start_time: "09:00"

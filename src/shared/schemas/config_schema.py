@@ -8,6 +8,16 @@ class _ClusteringConfig:
     min_samples: int = 2
 
 @dataclass
+class _FilterConfig:
+    name_weight: float = 1.0
+    source_weight: float = 1.0
+    tag_weight: float = 1.0
+    semantic_weight: float = 1.0
+    wiki_weight: float = 1.0
+    link_weight: float = 1.0
+    sigmoid_offset: float = 1.0
+
+@dataclass
 class _PruningConfig:
     diversity_weight: float = 0.15
     pruning_percentile: float = 60
