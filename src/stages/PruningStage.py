@@ -38,7 +38,7 @@ class PruningStage(BaseStage):
                                 config=_ClusteringConfig(**self.config["clustering"]))
         (cluster_map, clustered_pois) = clustering.cluster_pois()
         state.clustered_pois = clustered_pois
-        state.artifacts.cluster_map = cluster_map
+        state.artifacts.cluster_map_ptoid = cluster_map
 
         pruning = Pruning(
             clustered_pois=clustered_pois,

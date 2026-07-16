@@ -26,7 +26,8 @@ class PipelineArtifacts(BaseModel):
     """
     clusters: dict[int, Cluster] = Field(default_factory=dict)
     candidate_selection: Any | None = None
-    cluster_map: dict[str, int] = Field(default_factory=dict)
+    cluster_map_ptoid: dict[str, int] = Field(default_factory=dict)
+    cluster_map_idtop: dict[int, list] = Field(default_factory=dict)
     selected_clusters: Any | None = None
     cluster_scores: Any | None = None
     

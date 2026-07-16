@@ -56,15 +56,14 @@ stage4:
     use_poi_name: true
 
 stage5:
-  reranking:
-    semantic:
-      model: BAAI/bge-m3
-      batch_size: 128
-      normalize_embeddings: true
+  semantic:
+    model: BAAI/bge-m3
+    batch_size: 128
+    normalize_embeddings: true
 
-    anchor:
-      sigma_m: 500
-      neighbor_radius_m: 400
+  anchor:
+    sigma_m: 500
+    neighbor_radius_m: 400
 
 stage6:
   candidate_selection:
@@ -74,15 +73,14 @@ stage6:
     distance_decay_m: 500
 
 stage7:
-  itinerary:
-    day:
-      start_time: "09:00"
-      default_visit_duration_minutes: 90
-      default_travel_time_minutes: 12
-      minimum_travel_time_minutes: 5
-      walking_speed_kmph: 4.8
+  day:
+    start_time: "09:00"
+    default_visit_duration_minutes: 90
+    default_travel_time_minutes: 12
+    minimum_travel_time_minutes: 5
+    walking_speed_kmph: 4.8
 
-    scoring:
-      spatial_efficiency: 0.82
-      temporal_feasibility: 1.00
-      diversity: 0.75
+  scoring:
+    spatial_efficiency: 0.82
+    temporal_feasibility: 1.00
+    diversity: 0.75
