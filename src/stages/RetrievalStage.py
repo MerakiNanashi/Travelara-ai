@@ -46,6 +46,9 @@ class RetrievalStage(BaseStage):
 
             dedup_pois = deduplicate(pois=pois)
 
+            if not dedup_pois:
+                raise RuntimeError("RetrievalStage: no POIs retrieved.")
+
             kept = set(map(id, dedup_pois))
             discarded_dups = [poi for poi in pois if id(poi) not in kept]
 

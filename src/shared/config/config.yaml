@@ -66,7 +66,6 @@ stage5:
     neighbor_radius_m: 400
 
 stage6:
-  candidate_selection:
     target_per_day: 6
     expansion_radius_m: 750
     diversity_weight: 0.35

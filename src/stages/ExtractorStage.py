@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
 from src.shared.schemas import StructuredIntent, PlanningState, Stage, StageContext
 from .BaseStage import BaseStage
 from src.extractor import Extractor

@@ -38,10 +38,7 @@ def preferences_to_legacy(
     category_weights: dict[str, float] = {}
 
     for pref in preferences:
-        if (
-            pref.type != PreferenceType.OBJECTIVE
-            or pref.category is None
-        ):
+        if pref.category is None:
             continue
 
         category_weights[pref.category] = max(

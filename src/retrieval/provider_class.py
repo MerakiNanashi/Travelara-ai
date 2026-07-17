@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 import httpx
+import traceback
 import json
 # From Candidate:POI, Intent:Preference
 from src.shared.schemas import POI, Preference,_ProviderConfig
@@ -102,8 +103,7 @@ class BaseProvider(ABC):
             ]
 
             responses = await asyncio.gather(
-                *tasks,
-                return_exceptions=True,
+                *tasks
             )
 
         result = {}
@@ -111,8 +111,7 @@ class BaseProvider(ABC):
         for response in responses:
 
             if isinstance(response, Exception):
-                print(f"FAILED: {response}")
-                continue
+                traceback.print_exception(response)
 
             common_category, payload = response
             result[common_category] = payload
@@ -144,4 +143,5 @@ class BaseProvider(ABC):
             radius_m=radius_m,
             debug=debug
         )
+
         return self.normalize(results)

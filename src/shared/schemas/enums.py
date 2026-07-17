@@ -48,3 +48,5 @@ class Stage(str, Enum):
     ENRICHMENT = "enrichment"
     ITINERARY = "itinerary"
     RERANKER = "reranker"
+    BUILD = "builder"
+    PLAN = "planner"

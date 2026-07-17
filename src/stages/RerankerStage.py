@@ -72,7 +72,7 @@ class RerankerStage(BaseStage):
 
         self.debugger.save_stage(
             Stage.RERANKER,
-            6,
+            5,
             state,
         )
 

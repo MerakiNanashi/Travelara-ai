@@ -36,7 +36,7 @@ class CandidatePoolBuilder:
     def select(
         self,
         pois: list[POI],
-        selected_clusters: list[ClusterScore],
+        selected_clusters: dict[int, ClusterScore],
         cluster_map: dict[str, int],
         days: int,
     ) -> list[CandidateSelectionResult]:
@@ -44,18 +44,18 @@ class CandidatePoolBuilder:
         by_cluster = poi_adapter.group_by_cluster(pois)
 
         ranked_clusters = sorted(
-            selected_clusters,
-            key=lambda c: c.survival_score,
+            selected_clusters.items(),
+            key=lambda c: c[1].survival_score,
             reverse=True,
         )[:days]
 
         used: set[str] = set()
         result: list[dict] = []
 
-        for cluster in ranked_clusters:
+        for cluster_id, cluster in ranked_clusters:
 
             members = sorted(
-                by_cluster.get(cluster.cluster_id, []),
+                by_cluster.get(cluster_id, []),
                 key=lambda p: p.anchor.overall,
                 reverse=True,
             )
@@ -80,7 +80,7 @@ class CandidatePoolBuilder:
                 neighbors = self._neighbor_candidates(
                     anchor,
                     pois,
-                    cluster.cluster_id,
+                    cluster_id,
                     cluster_map,
                     used,
                 )

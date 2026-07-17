@@ -65,7 +65,7 @@ class PruningStage(BaseStage):
         )
         self.debugger.save_stage(
             Stage.PRUNING,
-            5,
+            3,
             state,
         )
 
