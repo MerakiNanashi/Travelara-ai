@@ -856,16 +856,16 @@ function renderDrawer(dayPlan) {
   }
 
   const poi = stop.poi;
-  const a = poi.anchor_score || {};
-  const u = poi.utility_score || {};
+  const a = poi.anchor || poi.anchor_score || {};
+  const u = poi.utility || poi.utility_score || {};
 
   const bars = [
-    ["Semantic fit", a.semantic_score],
-    ["Representativeness", a.representative_score],
-    ["Expansion potential", a.expansion_score],
-    ["Connectivity", a.connectivity_score],
-    ["Importance", a.importance_score],
-    ["Overall anchor", a.overall_anchor],
+    ["Semantic fit", a.semantic ?? a.semantic_score],
+    ["Representativeness", a.representative ?? a.representative_score],
+    ["Expansion potential", a.expansion ?? a.expansion_score],
+    ["Connectivity", a.connectivity ?? a.connectivity_score],
+    ["Importance", a.importance ?? a.importance_score],
+    ["Overall anchor", a.overall ?? a.overall_anchor],
   ];
 
   const barsHtml = bars.map(([label, val]) => {
@@ -891,11 +891,11 @@ function renderDrawer(dayPlan) {
       <div class="drawer-section">
         <div class="score-row">
           <span class="score-label">Utility (overall)</span>
-          <span class="score-val">${(u.overall_score ?? 0).toFixed(2)}</span>
+          <span class="score-val">${(u.overall ?? u.overall_score ?? 0).toFixed(2)}</span>
         </div>
         <div class="score-row">
           <span class="score-label">Raw quality score</span>
-          <span class="score-val">${(u.raw_score ?? 0).toFixed(2)}</span>
+          <span class="score-val">${(u.raw ?? u.raw_score ?? 0).toFixed(2)}</span>
         </div>
       </div>
 
@@ -971,8 +971,6 @@ document.getElementById("queryInput").addEventListener("keydown", (e) => {
 });
 
 renderConnStatus();
-// Load the mock itinerary by default so the UI isn't empty on first paint.
-handlePlan();
 </script>
 
 </body>

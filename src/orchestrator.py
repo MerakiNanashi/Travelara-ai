@@ -25,14 +25,13 @@ router = APIRouter(prefix="/plan", tags=["Planning"])
 
 @router.post("/")
 async def plan_trip(request: PlanningRequest, 
+                    seed_num: int | None = None,
                     user_id: int | None = None) -> PlanResponse:
 
     # Get settings & secrets
     settings = Settings()
     
     config_dict = get_config(settings.config_path)
-
-    seed_num = 0
 
     run_id = create_run_id(seed_num=seed_num)
     metadata = PipelineMetadata(run_id=run_id)
